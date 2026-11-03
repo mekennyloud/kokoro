@@ -1,4 +1,5 @@
-// Плитки на главной: день цикла, счётчик зумбы, сколько до маникюра и до сессии.
+// Плитки-панели на главной: день цикла, счётчик зумбы, сколько до маникюра и до сессии.
+// Картинки персонажей — записи art { slot, image } (кладутся с Mac: tools/art.py).
 // Нажми на плитку — откроются её настройки. «+1» у зумбы — сразу плюс одно занятие.
 //
 // Записи:
@@ -52,44 +53,53 @@ function countdown(date) {
 }
 
 export function mountWidgets(root) {
-  let w = {}, zumba = [], editing = null;
-  const grid = h('div.widgets');
+  let w = {}, zumba = [], arts = {}, editing = null;
+  const grid = h('div.panels');
   const panel = h('div');
   root.append(grid, panel);
 
   const save = (id, patch) => db.save({ id, type: 'widget', ...w[id], ...patch });
   const open = id => { editing = editing === id ? null : id; render(); };
 
-  function tile(id, cls, emoji, title, big, small, extra) {
-    return h('div.widget' + cls + (editing === id ? '.editing' : ''), null,
-      h('button.widget-main', { onclick: () => open(id), 'aria-expanded': editing === id ? 'true' : 'false' },
-        h('span.widget-title', null, h('span.widget-emoji', { 'aria-hidden': 'true' }, emoji), title),
-        h('span.widget-big', null, big),
-        h('span.widget-small', null, small)),
+  /** панель комикса; art — картинка персонажа из слота: 'duo' — чёрно-белая печать на цвете панели, 'sticker' — стикер */
+  function tile(id, cls, emoji, title, big, small, { art, extra } = {}) {
+    const img = art && arts[art.slot];
+    return h('div.panel' + cls + (editing === id ? '.editing' : '') + (img ? '.has-art' : ''), null,
+      img && art.mode === 'duo' && h('div.duo' + (art.dots ? '.dots' : ''), { style: art.style || '' }, h('img', { src: img, alt: '', style: art.img || '' })),
+      img && art.mode === 'sticker' && h('img.panel-sticker', { src: img, alt: '', style: art.style || '' }),
+      h('button.panel-main', { onclick: () => open(id), 'aria-expanded': editing === id ? 'true' : 'false' },
+        h('span.panel-label', null, h('span', { 'aria-hidden': 'true' }, emoji), ' ', title),
+        h('span.panel-big', null, big),
+        h('span.panel-sub', null, small)),
       extra);
   }
 
   function tiles() {
     const c = cycleState(w['w-cycle']);
+    const cycleArt = { art: { slot: 'home-cycle', mode: 'duo', dots: true, img: 'object-position: 70% 35%' } };
     const cycle = c.inPeriod
-      ? tile('w-cycle', '.cycle.period', '🌙', 'Cycle', `Period · day ${c.day}`, `of ${w['w-cycle'].length} days · next ${dates.short(c.next)}`)
-      : tile('w-cycle', '.cycle', '🌙', 'Cycle', `Day ${c.day}`, `Period ${dates.relative(c.next)} · ${dates.short(c.next)}`);
+      ? tile('w-cycle', '.cycle.period', '🌙', 'Cycle', `Period · ${c.day}`, `of ${w['w-cycle'].length} days · next ${dates.short(c.next)}`, cycleArt)
+      : tile('w-cycle', '.cycle', '🌙', 'Cycle', `Day ${c.day}`, `period ${dates.relative(c.next)} · ${dates.short(c.next)}`, cycleArt);
+
+    const m = countdown(w['w-manicure'].date);
+    const mani = tile('w-manicure', '.manicure' + (m.late ? '.late' : ''), '💅', 'Manicure', m.big, m.small,
+      { art: { slot: 'home-manicure', mode: 'duo', img: 'object-position: 30% 60%' } });
 
     const monthStart = dates.startOfMonth(dates.today());
     const total = (w['w-zumba'].base || 0) + zumba.length;
     const thisMonth = zumba.filter(z => z.date >= monthStart).length;
-    const plus = h('button.widget-plus', { 'aria-label': 'Add a Zumba class', onclick: async e => {
+    const plus = h('button.panel-plus', { 'aria-label': 'Add a Zumba class', onclick: async e => {
       e.currentTarget.classList.remove('pop'); void e.currentTarget.offsetWidth; e.currentTarget.classList.add('pop');
       const rec = await db.save({ type: 'tally', tally: 'zumba', date: dates.today() });
       toast(`Zumba #${total + 1} 💃`, { label: 'Undo', run: () => db.remove(rec.id) });
     } }, '+1');
-    const z = tile('w-zumba', '.zumba', '💃', 'Zumba', String(total), `this month: ${thisMonth}`, plus);
+    const z = tile('w-zumba', '.zumba.wide', '💃', 'Zumba', String(total), `classes · ${thisMonth} this month`,
+      { art: { slot: 'home-zumba', mode: 'sticker' }, extra: plus });
 
-    const m = countdown(w['w-manicure'].date);
-    const mani = tile('w-manicure', '.manicure' + (m.late ? '.late' : ''), '💅', 'Manicure', m.big, m.small);
     const s = countdown(w['w-session'].date);
-    const session = tile('w-session', '.session' + (s.late ? '.late' : ''), '🎓', 'Exam session', s.big, s.small);
-    return [cycle, z, mani, session];
+    const session = tile('w-session', '.session.wide' + (s.late ? '.late' : ''), '🎓', 'Exam session', s.big, s.small,
+      { art: { slot: 'home-exam', mode: 'duo', dots: true, img: 'object-position: 50% 30%' } });
+    return [cycle, mani, z, session];
   }
 
   // ── настройки плиток ──
@@ -131,7 +141,7 @@ export function mountWidgets(root) {
     } else {
       body = [h('h3', null, '🎓 Exam session'), dateField('Starts on', x.date, v => save('w-session', { date: v }))];
     }
-    return [h('section.card.widget-editor', null, ...body.filter(Boolean),
+    return [h('section.card.panel-editor', null, ...body.filter(Boolean),
       h('button.link', { onclick: () => { editing = null; render(); } }, 'Close'))];
   }
 
@@ -145,6 +155,7 @@ export function mountWidgets(root) {
     w = {};
     for (const [id, d] of Object.entries(DEFAULTS)) w[id] = { ...d, ...(all.find(r => r.id === id && !r.deleted) || {}) };
     zumba = all.filter(r => r.type === 'tally' && r.tally === 'zumba' && !r.deleted).sort((a, b) => a.date.localeCompare(b.date) || a.created - b.created);
+    arts = Object.fromEntries(all.filter(r => r.type === 'art' && !r.deleted && r.image).map(r => [r.slot, r.image]));
     // поле, в котором сейчас печатают, не перерисовываем
     if (panel.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') grid.replaceChildren(...tiles());
     else render();

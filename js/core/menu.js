@@ -3,11 +3,11 @@ import { pref, setPref } from './prefs.js';
 import * as sync from './sync.js';
 import { h } from './ui.js';
 
-const THEMES = [['auto', 'System'], ['light', 'Light'], ['dark', 'Dark']];
+const THEMES = [['light', 'Day'], ['dark', 'Night'], ['auto', 'System']];
 
-export function applyTheme(t = pref('theme', 'auto')) {
-  if (t === 'auto') delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = t;
+// по умолчанию — дневной жёлтый постер; Night и System выбираются в меню
+export function applyTheme(t = pref('theme', 'light')) {
+  document.documentElement.dataset.theme = t;
 }
 
 export function setupMenu(button) {
@@ -21,7 +21,7 @@ export function setupMenu(button) {
   const outside = e => { if (!panel?.contains(e.target) && e.target !== button) close(); };
 
   function open() {
-    const theme = pref('theme', 'auto');
+    const theme = pref('theme', 'light');
     panel = h('div.menu', { role: 'menu' },
       h('div.menu-group', null,
         h('span.menu-label', null, 'Theme'),
