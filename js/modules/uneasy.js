@@ -4,37 +4,10 @@
 // Записи: uneasy { text, causes: [id], image: data:…|null, reflection, released, releasedAt }.
 import * as db from '../core/db.js';
 import { h, removeWithUndo, when } from '../core/ui.js';
-import { pickImage } from '../core/images.js';
+import { causePicker, imageField, stickers } from '../core/bits.js';
 
-export const CAUSES = [
-  ['work', '💼', 'Work'], ['personal', '💗', 'Personal'], ['study', '📚', 'Study'],
-  ['emigration', '✈️', 'Emigration'], ['family', '🏠', 'Family'], ['health', '🩺', 'Health'],
-];
 const PRAISE = ['Well done!', 'Nice, let it go!', 'Proud of you!', 'Gone. Breathe out.', 'That’s the spirit!', 'Lighter already!'];
 const SPARKS = ['✨', '🎉', '💫', '🌟', '🫧', '💖'];
-
-/** ряд стикеров-причин; selected — Set id, меняется на месте */
-function causePicker(selected, onChange = () => {}) {
-  const el = h('div.cause-picker', { role: 'group', 'aria-label': 'What is it about?' });
-  const render = () => el.replaceChildren(...CAUSES.map(([id, emoji, name]) =>
-    h('button.cause' + (selected.has(id) ? '.on' : ''), {
-      type: 'button', 'aria-pressed': selected.has(id) ? 'true' : 'false',
-      onclick: () => { selected.has(id) ? selected.delete(id) : selected.add(id); render(); onChange(); },
-    }, h('span.cause-emoji', { 'aria-hidden': 'true' }, emoji), h('span.cause-name', null, name))));
-  render();
-  return el;
-}
-
-/** кнопка «картинка» с превью; state.image меняется на месте */
-function imageField(state, onChange = () => {}) {
-  const el = h('div.image-field');
-  const render = () => el.replaceChildren(state.image
-    ? h('div.image-preview', null, h('img', { src: state.image, alt: '' }),
-        h('button.icon-btn.image-remove', { type: 'button', 'aria-label': 'Remove picture', onclick: () => { state.image = null; render(); onChange(); } }, '✕'))
-    : h('button.btn.small', { type: 'button', onclick: async () => { const img = await pickImage(); if (img) { state.image = img; render(); onChange(); } } }, '🖼 Picture'));
-  render();
-  return el;
-}
 
 function celebrate() {
   const el = h('div.celebrate', { role: 'status' },
@@ -100,12 +73,6 @@ export default {
     }
 
     // ── одна запись ──
-    const stickers = u => (u.causes || []).length
-      ? h('div.stickers', { 'aria-label': u.causes.map(c => CAUSES.find(x => x[0] === c)?.[2]).join(', ') },
-          u.causes.map((c, i) => h('span.sticker', { style: `--tilt:${(i % 2 ? 8 : -10) + i * 3}deg`, 'aria-hidden': 'true' },
-            CAUSES.find(x => x[0] === c)?.[1] || '')))
-      : null;
-
     function editor(u) {
       const state = { causes: new Set(u.causes || []), image: u.image || null };
       const ta = h('textarea.edit-input', { value: u.text, rows: Math.min(10, u.text.split('\n').length + 1) });
@@ -136,7 +103,7 @@ export default {
       if (editId === u.id) return editor(u);
       const open = openId === u.id;
       const li = h('li.thought.uneasy-item' + (open ? '.open' : '') + (u.released ? '.done' : ''), null,
-        stickers(u),
+        stickers(u.causes),
         u.text && h('button.thought-text', { onclick: () => { openId = open ? null : u.id; render(); } }, u.text),
         u.image && h('button.uneasy-image', { onclick: () => { openId = open ? null : u.id; render(); }, 'aria-label': 'Picture' }, h('img', { src: u.image, alt: '' })),
         reflection(u),
