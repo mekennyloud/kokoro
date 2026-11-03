@@ -13,6 +13,12 @@ export function addMonths(s, n) {
   return ymd(d);
 }
 
+/** понедельник недели, в которую попадает дата */
+export function startOfWeek(s) { const d = parse(s); return addDays(s, -((d.getDay() + 6) % 7)); }
+export function startOfMonth(s) { return s.slice(0, 8) + '01'; }
+export function endOfMonth(s) { return addDays(addMonths(startOfMonth(s), 1), -1); }
+export const MONTHS = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1).toLocaleDateString('en-GB', { month: 'long' }));
+
 /** сколько дней от сегодня (отрицательное — уже прошло) */
 export const daysFrom = s => Math.round((parse(s) - parse(today())) / 864e5);
 
