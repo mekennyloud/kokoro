@@ -22,14 +22,14 @@ function bounds(range, selected) {
 export default {
   id: 'calendar',
   title: 'Calendar',
-  icon: '▦',
+  icon: 'calendar',
 
   mount(root) {
     const now = new Date();
     let month = new Date(now.getFullYear(), now.getMonth(), 1);
     let selected = dates.today();
     let range = pref('calendar:range', 'day');
-    let jumping = false, editId = null;
+    let jumping = false, editId = null, adding = false;
     let events = [];
 
     const titleEl = h('button.cal-title', { onclick: () => { jumping = !jumping; render(); }, 'aria-expanded': 'false' });
@@ -39,6 +39,13 @@ export default {
     const rangesEl = h('div.cal-ranges', { role: 'group', 'aria-label': 'Show plans for' });
     const listEl = h('div.cal-list');
     const shift = n => { month = new Date(month.getFullYear(), month.getMonth() + n, 1); render(); };
+
+    // ── выбранный день; поле «добавить план» — только по кнопке «+» ──
+    const fab = h('button.fab', { type: 'button', 'aria-label': 'Add a plan for the selected day', 'aria-expanded': 'false', onclick: () => {
+      adding = !adding;
+      renderDay();
+      if (adding) { const i = dayEl.querySelector('input'); i.focus({ preventScroll: true }); dayEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    } }, '+');
 
     root.append(
       h('header.page-head', null, h('h1', null, 'Calendar')),
@@ -50,7 +57,7 @@ export default {
         jumpEl,
         gridEl,
         h('button.link.cal-today', { onclick: () => { month = new Date(now.getFullYear(), now.getMonth(), 1); selected = dates.today(); jumping = false; render(); } }, 'Today')),
-      dayEl, rangesEl, listEl,
+      dayEl, rangesEl, listEl, fab,
     );
 
     // ── переход к месяцу и году ──
@@ -91,17 +98,19 @@ export default {
 
     // ── выбранный день: добавить план ──
     function renderDay() {
+      fab.classList.toggle('on', adding); fab.setAttribute('aria-expanded', adding ? 'true' : 'false');
       const input = h('input.field', { placeholder: 'Add a plan for this day', autocomplete: 'off', enterKeyHint: 'done' });
-      dayEl.replaceChildren(
+      dayEl.replaceChildren(...[
         h('h2', null, `${dates.long(selected)} · ${dates.relative(selected)}`),
-        h('form.cal-add', { onsubmit: async e => {
+        adding && h('form.cal-add', { onsubmit: async e => {
           e.preventDefault();
           const text = input.value.trim();
           if (!text) return input.focus();
-          input.value = '';
+          adding = false;
           await db.save({ type: 'event', text, date: selected });
-        } }, input, h('button.btn', { type: 'submit' }, 'Add')),
-      );
+          renderDay();
+        } }, input, h('button.btn.primary', { type: 'submit' }, 'Add')),
+      ].filter(Boolean));
     }
 
     // ── список планов за период ──

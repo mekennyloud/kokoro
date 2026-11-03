@@ -62,15 +62,15 @@ export function mountWidgets(root) {
   const open = id => { editing = editing === id ? null : id; render(); };
 
   /** панель комикса; art — картинка персонажа из слота: 'duo' — чёрно-белая печать на цвете панели, 'sticker' — стикер */
-  function tile(id, cls, emoji, title, big, small, { art, extra } = {}) {
+  function tile(id, cls, title, big, small, { art, extra } = {}) {
     const img = art && arts[art.slot];
     return h('div.panel' + cls + (editing === id ? '.editing' : '') + (img ? '.has-art' : ''), null,
       img && art.mode === 'duo' && h('div.duo' + (art.dots ? '.dots' : ''), { style: art.style || '' }, h('img', { src: img, alt: '', style: art.img || '' })),
       img && art.mode === 'sticker' && h('img.panel-sticker', { src: img, alt: '', style: art.style || '' }),
       h('button.panel-main', { onclick: () => open(id), 'aria-expanded': editing === id ? 'true' : 'false' },
-        h('span.panel-label', null, h('span', { 'aria-hidden': 'true' }, emoji), ' ', title),
+        h('span.panel-label', null, title),
         h('span.panel-big', null, big),
-        h('span.panel-sub', null, small)),
+        small && h('span.panel-sub', null, small)),
       extra);
   }
 
@@ -78,26 +78,24 @@ export function mountWidgets(root) {
     const c = cycleState(w['w-cycle']);
     const cycleArt = { art: { slot: 'home-cycle', mode: 'duo', dots: true, img: 'object-position: 70% 35%' } };
     const cycle = c.inPeriod
-      ? tile('w-cycle', '.cycle.period', '🌙', 'Cycle', `Period · ${c.day}`, `of ${w['w-cycle'].length} days · next ${dates.short(c.next)}`, cycleArt)
-      : tile('w-cycle', '.cycle', '🌙', 'Cycle', `Day ${c.day}`, `period ${dates.relative(c.next)} · ${dates.short(c.next)}`, cycleArt);
+      ? tile('w-cycle', '.cycle.period', 'Cycle', `Period · ${c.day}`, `day ${c.day} of ${w['w-cycle'].length}`, cycleArt)
+      : tile('w-cycle', '.cycle', 'Cycle', `Day ${c.day}`, `starts ${dates.short(c.next)}`, cycleArt);
 
     const m = countdown(w['w-manicure'].date);
-    const mani = tile('w-manicure', '.manicure' + (m.late ? '.late' : ''), '💅', 'Manicure', m.big, m.small,
+    const mani = tile('w-manicure', '.manicure' + (m.late ? '.late' : ''), 'Manicure', m.big, w['w-manicure'].date ? null : m.small,
       { art: { slot: 'home-manicure', mode: 'duo', img: 'object-position: 30% 60%' } });
 
-    const monthStart = dates.startOfMonth(dates.today());
     const total = (w['w-zumba'].base || 0) + zumba.length;
-    const thisMonth = zumba.filter(z => z.date >= monthStart).length;
     const plus = h('button.panel-plus', { 'aria-label': 'Add a Zumba class', onclick: async e => {
       e.currentTarget.classList.remove('pop'); void e.currentTarget.offsetWidth; e.currentTarget.classList.add('pop');
       const rec = await db.save({ type: 'tally', tally: 'zumba', date: dates.today() });
       toast(`Zumba #${total + 1} 💃`, { label: 'Undo', run: () => db.remove(rec.id) });
     } }, '+1');
-    const z = tile('w-zumba', '.zumba.wide', '💃', 'Zumba', String(total), `classes · ${thisMonth} this month`,
+    const z = tile('w-zumba', '.zumba.wide', 'Zumba', String(total), total === 1 ? 'class in total' : 'classes in total',
       { art: { slot: 'home-zumba', mode: 'sticker' }, extra: plus });
 
     const s = countdown(w['w-session'].date);
-    const session = tile('w-session', '.session.wide' + (s.late ? '.late' : ''), '🎓', 'Exam session', s.big, s.small,
+    const session = tile('w-session', '.session.wide' + (s.late ? '.late' : ''), 'Exam session', s.big, s.small,
       { art: { slot: 'home-exam', mode: 'duo', dots: true, img: 'object-position: 50% 30%' } });
     return [cycle, mani, z, session];
   }
@@ -115,31 +113,31 @@ export function mountWidgets(root) {
     if (editing === 'w-cycle') {
       const c = cycleState(x);
       body = [
-        h('h3', null, '🌙 Cycle'),
+        h('h3', null, 'Cycle'),
         num('Usually starts on day', x.startDay, 1, 31, v => save('w-cycle', { startDay: v })),
         num('Lasts, days', x.length, 1, 10, v => save('w-cycle', { length: v })),
         h('div.buttons', null,
-          h('button.btn.primary', { onclick: () => save('w-cycle', { starts: [...new Set([...(x.starts || []), dates.today()])].sort().slice(-24) }) }, '🩸 Started today'),
+          h('button.btn.primary', { onclick: () => save('w-cycle', { starts: [...new Set([...(x.starts || []), dates.today()])].sort().slice(-24) }) }, 'Started today'),
           c.logged && h('button.btn', { onclick: () => save('w-cycle', { starts: (x.starts || []).filter(s => s !== c.logged) }) }, `Remove mark ${dates.short(c.logged)}`)),
         h('p.hint', null, `This cycle started ${dates.short(c.start)}. Next period expected ${dates.short(c.next)}. If it starts on another day, tap “Started today” — the count will follow.`),
       ];
     } else if (editing === 'w-zumba') {
       body = [
-        h('h3', null, '💃 Zumba'),
+        h('h3', null, 'Zumba'),
         num('Classes before the app', x.base || 0, 0, 9999, v => save('w-zumba', { base: v })),
         h('div.buttons', null, zumba.length > 0 && h('button.btn', { onclick: () => db.remove(zumba.at(-1).id) }, '−1 (remove last)')),
         h('p.hint', null, `Tracked here: ${zumba.length}. Last: ${zumba.length ? dates.short(zumba.at(-1).date) : '—'}.`),
       ];
     } else if (editing === 'w-manicure') {
       body = [
-        h('h3', null, '💅 Manicure'),
+        h('h3', null, 'Manicure'),
         dateField('Next manicure', x.date, v => save('w-manicure', { date: v })),
         num('Every, days', x.every || 21, 1, 120, v => save('w-manicure', { every: v })),
-        h('div.buttons', null, h('button.btn.primary', { onclick: () => save('w-manicure', { date: dates.addDays(dates.today(), x.every || 21) }) }, '💅 Done today')),
+        h('div.buttons', null, h('button.btn.primary', { onclick: () => save('w-manicure', { date: dates.addDays(dates.today(), x.every || 21) }) }, 'Done today')),
         h('p.hint', null, `“Done today” sets the next one in ${x.every || 21} days.`),
       ];
     } else {
-      body = [h('h3', null, '🎓 Exam session'), dateField('Starts on', x.date, v => save('w-session', { date: v }))];
+      body = [h('h3', null, 'Exam session'), dateField('Starts on', x.date, v => save('w-session', { date: v }))];
     }
     return [h('section.card.panel-editor', null, ...body.filter(Boolean),
       h('button.link', { onclick: () => { editing = null; render(); } }, 'Close'))];

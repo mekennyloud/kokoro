@@ -3,6 +3,7 @@ import { sections, extras } from './modules/index.js';
 import { startAutoSync } from './core/sync.js';
 import { setupMenu, applyTheme } from './core/menu.js';
 import { h } from './core/ui.js';
+import { icon } from './core/icons.js';
 
 const all = [...sections, ...extras];
 const main = document.getElementById('main');
@@ -17,7 +18,7 @@ function current() {
 function renderNav(active) {
   nav.replaceChildren(...sections.map(m =>
     h('a.nav-item' + (m === active ? '.on' : ''), { href: '#' + m.id, 'aria-current': m === active ? 'page' : null },
-      h('span.nav-icon', { 'aria-hidden': 'true' }, m.icon), h('span.nav-label', null, m.short || m.title))));
+      icon(m.icon), h('span.nav-label', null, m.short || m.title))));
   nav.hidden = sections.length < 2;
 }
 

@@ -3,7 +3,7 @@
 // «Let go» — запись улетает с праздником, а наверху растёт счётчик отпущенного.
 // Записи: uneasy { text, causes: [id], image: data:…|null, reflection, released, releasedAt }.
 import * as db from '../core/db.js';
-import { h, removeWithUndo, when } from '../core/ui.js';
+import { h, removeWithUndo, when, addFlow } from '../core/ui.js';
 import { causePicker, imageField, stickers } from '../core/bits.js';
 
 const PRAISE = ['Well done!', 'Nice, let it go!', 'Proud of you!', 'Gone. Breathe out.', 'That’s the spirit!', 'Lighter already!'];
@@ -25,7 +25,7 @@ export default {
   id: 'uneasy',
   title: 'Not happy about this',
   short: 'Not happy',
-  icon: '☁',
+  icon: 'unhappy',
 
   mount(root) {
     let items = [], openId = null, editId = null, reflectId = null, showReleased = false, bump = false;
@@ -54,13 +54,15 @@ export default {
       await db.save({ type: 'uneasy', text: t, causes: [...draft.causes], image: draft.image, reflection: '', released: false });
       text.value = ''; text.style.height = '';
       resetDraft();
+      flow.close();
     }
 
     const counterEl = h('div.letgo-holder');
     const listEl = h('ul.thoughts.uneasy-list');
     const relEl = h('section.done-block');
 
-    root.append(h('header.page-head', null, h('h1', null, 'Not happy about this')), counterEl, capture, listEl, relEl);
+    const flow = addFlow(capture, text, 'Tell what happened');
+    root.append(h('header.page-head', null, h('h1', null, 'Not happy about this')), counterEl, capture, flow.fab, listEl, relEl);
 
     // ── отпустить ──
     async function letGo(u, li) {

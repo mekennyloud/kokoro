@@ -3,7 +3,7 @@
 // Записи: later { text, date: 'ГГГГ-ММ-ДД', done, doneAt }.
 import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
-import { h, composer, removeWithUndo, toast } from '../core/ui.js';
+import { h, composer, removeWithUndo, toast, addFlow } from '../core/ui.js';
 
 const PRESETS = [['In a week', d => dates.addDays(d, 7)], ['In a month', d => dates.addMonths(d, 1)],
   ['In 3 months', d => dates.addMonths(d, 3)], ['In 6 months', d => dates.addMonths(d, 6)]];
@@ -28,14 +28,15 @@ export default {
   id: 'later',
   title: 'Don’t want to remember, but have to',
   short: 'Later',
-  icon: '⏳',
+  icon: 'later',
 
   mount(root) {
     let items = [], openId = null, editId = null, showDone = false;
 
     const picker = datePicker();
-    const { el: capture } = composer({
+    const { el: capture, input } = composer({
       placeholder: 'e.g. dentist appointment', button: 'Remember', multiline: false, extra: picker.el,
+      afterSubmit: () => flow.close(),
       onSubmit: async text => {
         const date = picker.value();
         await db.save({ type: 'later', text, date, done: false });
@@ -47,7 +48,8 @@ export default {
     const listEl = h('ul.later');
     const doneEl = h('section.done-block');
 
-    root.append(h('header.page-head', null, h('h1', null, 'Don’t want to remember, but have to')), capture, listEl, doneEl);
+    const flow = addFlow(capture, input, 'Remember something');
+    root.append(h('header.page-head', null, h('h1', null, 'Don’t want to remember, but have to')), capture, flow.fab, listEl, doneEl);
 
     function row(l) {
       if (editId === l.id) {

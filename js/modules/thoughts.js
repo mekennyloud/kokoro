@@ -2,7 +2,7 @@
 // Записи: thought { text, shelf: id|null, done, doneAt } и shelf { name, order }.
 import * as db from '../core/db.js';
 import { pref, setPref } from '../core/prefs.js';
-import { h, toast, when } from '../core/ui.js';
+import { h, toast, when, addFlow } from '../core/ui.js';
 
 const INBOX = 'inbox', ALL = 'all', DONE = 'done';
 
@@ -36,7 +36,7 @@ async function translateShelves() {
 export default {
   id: 'thoughts',
   title: 'Thoughts',
-  icon: '✎',
+  icon: 'thoughts',
 
   mount(root) {
     let view = pref('thoughts:view', INBOX);
@@ -65,7 +65,7 @@ export default {
       if (!text) return cap.focus();
       cap.value = ''; cap.style.height = '';
       await db.save({ type: 'thought', text, shelf: target(), done: false });
-      cap.focus();
+      flow.close();
     }
 
     // ── поиск ──
@@ -78,9 +78,10 @@ export default {
     const headEl = h('div.list-head');
     const listEl = h('ul.thoughts');
 
+    const flow = addFlow(capture, cap, 'New thought');
     root.append(
       h('header.page-head', null, h('h1', null, 'Thoughts')),
-      capture,
+      capture, flow.fab,
       h('div.thoughts-layout', null, shelvesEl, h('section.thoughts-main', null, search, headEl, listEl)),
     );
 

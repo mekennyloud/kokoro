@@ -1,7 +1,8 @@
-// Главная в стиле комикс-постера: огромная дата, панели (цикл, маникюр, зумба, сессия) с персонажами,
-// записки себе — самая свежая «орёт» бегущей строкой, как FAYA!FAYA!, остальные — карточки со звёздочкой.
+// Главная в стиле комикс-постера: огромная дата, сразу под ней — бегущие строки (самое важное),
+// панели (цикл, маникюр, зумба, сессия) с персонажами, записки себе со звёздочкой.
+// Бегущая строка или обычная записка — выбирается галочкой при записи, потом можно поменять.
 // Внизу — «SOON»: то, что подойдёт за неделю из «Don't want to remember».
-// Записи: note { text }.
+// Записи: note { text, ticker }.
 import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
 import { h, composer, removeWithUndo } from '../core/ui.js';
@@ -23,21 +24,25 @@ function dateBlock() {
 export default {
   id: 'home',
   title: 'Home',
-  icon: '⌂',
+  icon: 'home',
 
   mount(root) {
     let notes = [], soon = [], openId = null, editId = null;
 
+    const tickerBox = h('input', { type: 'checkbox', checked: true });
+    const tickerToggle = h('label.ticker-toggle', null, tickerBox, h('span', null, 'Running line'));
     const { el: capture } = composer({
-      placeholder: 'Write to yourself…', button: 'Say it!', className: 'home-capture',
-      onSubmit: text => db.save({ type: 'note', text }),
+      placeholder: 'Write to yourself…', button: 'Say it!', className: 'home-capture', extra: tickerToggle,
+      onSubmit: text => db.save({ type: 'note', text, ticker: tickerBox.checked }),
     });
+    const tickersEl = h('div.home-tickers');
     const notesEl = h('div.home-notes');
     const soonEl = h('section.home-soon');
     const widgetsEl = h('section.widgets-holder');
 
     root.append(
       h('header.page-head.home-head', null, dateBlock()),
+      tickersEl,
       h('div.home-grid', null,
         h('div.home-col', null, widgetsEl),
         h('div.home-col', null, capture, notesEl, soonEl)),
@@ -46,6 +51,7 @@ export default {
 
     function actions(n) {
       return openId === n.id && h('div.buttons.note-actions', null,
+        h('button.btn', { onclick: () => { openId = null; db.save({ ...n, ticker: !n.ticker }); } }, n.ticker ? 'Make it a note' : 'Make it a running line'),
         h('button.btn', { onclick: () => { editId = n.id; openId = null; render(); } }, 'Edit'),
         h('button.btn', { onclick: () => { openId = null; removeWithUndo(db, n, 'Removed'); } }, 'Remove'));
     }
@@ -60,7 +66,7 @@ export default {
         h('button.btn', { onclick: () => { editId = null; render(); } }, 'Cancel')));
     }
 
-    /** самая свежая записка — две встречные бегущие строки */
+    /** бегущая строка — две встречные строки, как FAYA!FAYA! */
     function shout(n) {
       const row = Array(6).fill(n.text.toUpperCase().replace(/[.!]*$/, '!')).join(' ');
       return h('div.note.shout' + (openId === n.id ? '.open' : ''), null,
@@ -77,7 +83,9 @@ export default {
     }
 
     function render() {
-      notesEl.replaceChildren(...notes.map((n, i) => editId === n.id ? editor(n) : i === 0 ? shout(n) : star(n)));
+      const tickers = notes.filter(n => n.ticker), plain = notes.filter(n => !n.ticker);
+      tickersEl.replaceChildren(...tickers.map(n => editId === n.id ? editor(n) : shout(n)));
+      notesEl.replaceChildren(...plain.map(n => editId === n.id ? editor(n) : star(n)));
       soonEl.replaceChildren(...soon.map(l => h('a.soon-strip', { href: '#later' },
         h('b', null, 'SOON'),
         h('span', null, l.text, h('small' + (dates.daysFrom(l.date) < 0 ? '.past' : ''), null,

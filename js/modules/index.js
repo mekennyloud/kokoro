@@ -1,5 +1,5 @@
 // Все разделы приложения. Новый раздел (траты, журнал, спорт…) — новый файл рядом
-// с { id, title, short?, icon, mount(root) → функция отписки } и строка в списке ниже.
+// с { id, title, short?, icon (имя из core/icons.js), mount(root) → функция отписки } и строка в списке ниже.
 import home from './home.js';
 import thoughts from './thoughts.js';
 import tasks from './tasks.js';

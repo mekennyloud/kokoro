@@ -3,7 +3,7 @@
 // к делу можно добавить заметку и картинку.
 // Записи: task { text, done, doneAt, urgent, causes: [id], note, image: data:…|null }.
 import * as db from '../core/db.js';
-import { h, removeWithUndo } from '../core/ui.js';
+import { h, removeWithUndo, addFlow } from '../core/ui.js';
 import { causePicker, imageField, stickers } from '../core/bits.js';
 
 /** переключатель «срочно / подождёт»; state.urgent меняется на месте */
@@ -39,7 +39,7 @@ function details(state) {
 export default {
   id: 'tasks',
   title: 'To do',
-  icon: '☐',
+  icon: 'tasks',
 
   mount(root) {
     let tasks = [], showDone = false, editId = null;
@@ -62,12 +62,13 @@ export default {
       await db.save({ type: 'task', text, done: false, urgent: draft.urgent, causes: [...draft.causes], note: draft.note.trim(), image: draft.image });
       input.value = '';
       resetDraft();
-      input.focus();
+      flow.close();
     }
 
     const listEl = h('div.task-groups');
     const doneEl = h('section.done-block');
-    root.append(h('header.page-head', null, h('h1', null, 'To do')), capture, listEl, doneEl);
+    const flow = addFlow(capture, input, 'New task');
+    root.append(h('header.page-head', null, h('h1', null, 'To do')), capture, flow.fab, listEl, doneEl);
 
     const toggle = t => db.save({ ...t, done: !t.done, doneAt: t.done ? null : Date.now() });
 

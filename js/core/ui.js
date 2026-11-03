@@ -18,7 +18,7 @@ export function h(tag, props, ...kids) {
 
 /** поле «написать и сохранить»: многострочное растёт по мере текста, ⌘/Ctrl+Enter — сохранить
  *  (однострочное — просто Enter). onSubmit(text) может вернуть false, чтобы текст не стирался. */
-export function composer({ placeholder, button = 'Save', multiline = true, onSubmit, extra = null, className = '' }) {
+export function composer({ placeholder, button = 'Save', multiline = true, onSubmit, extra = null, className = '', afterSubmit = null }) {
   const grow = () => { if (multiline) { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; } };
   const input = multiline
     ? h('textarea.capture-input', { placeholder, rows: 2, oninput: grow,
@@ -29,11 +29,30 @@ export function composer({ placeholder, button = 'Save', multiline = true, onSub
     if (!text) return input.focus();
     if (await onSubmit(text) === false) return;
     input.value = ''; input.style.height = '';
-    input.focus();
+    if (afterSubmit) afterSubmit(); else input.focus();
   }
   const el = h('form.capture' + (className ? '.' + className : ''), { onsubmit: e => { e.preventDefault(); submit(); } },
     input, h('div.capture-row', null, extra || h('span'), h('button.btn.primary', { type: 'submit' }, button)));
   return { el, input };
+}
+
+/** форма добавления прячется за круглой кнопкой «+» внизу справа: на экране меньше шума.
+ *  Возвращает { fab, open, close }; fab нужно добавить на страницу, close — вызвать после сохранения. */
+export function addFlow(form, focusEl, label = 'Add') {
+  form.hidden = true;
+  form.classList.add('add-form');
+  const fab = h('button.fab', { type: 'button', 'aria-label': label, 'aria-expanded': 'false', onclick: () => (form.hidden ? open() : close()) }, '+');
+  function open() {
+    form.hidden = false;
+    fab.classList.add('on'); fab.setAttribute('aria-expanded', 'true');
+    focusEl.focus({ preventScroll: true });   // фокус — сразу в нажатии, иначе iPhone не покажет клавиатуру
+    form.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  function close() {
+    form.hidden = true;
+    fab.classList.remove('on'); fab.setAttribute('aria-expanded', 'false');
+  }
+  return { fab, open, close };
 }
 
 /** кнопка удаления с «Вернуть» во всплывашке */

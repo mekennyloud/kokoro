@@ -6,7 +6,7 @@ import { h, when } from '../core/ui.js';
 export default {
   id: 'settings',
   title: 'Settings',
-  icon: '⚙',
+  icon: 'settings',
 
   mount(root) {
     const addr = h('input.field', {
