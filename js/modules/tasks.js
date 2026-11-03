@@ -1,6 +1,6 @@
 // «To do»: быстрые дела. Записал — отметил — забыл.
 // Вместо сроков — два режима: 🔥 Urgent и 🌿 Can wait. Стикер показывает сферу жизни,
-// к делу можно добавить заметку и картинку. Подробности раскрываются, только когда начинаешь писать.
+// к делу можно добавить заметку и картинку.
 // Записи: task { text, done, doneAt, urgent, causes: [id], note, image: data:…|null }.
 import * as db from '../core/db.js';
 import { h, removeWithUndo } from '../core/ui.js';
@@ -46,8 +46,7 @@ export default {
 
     // ── новое дело ──
     let draft;
-    const input = h('input.capture-input.single', { placeholder: 'What needs doing?', autocomplete: 'off', enterKeyHint: 'done',
-      oninput: () => capture.classList.add('expanded') });
+    const input = h('input.capture-input.single', { placeholder: 'What needs doing?', autocomplete: 'off', enterKeyHint: 'done' });
     const detailsHolder = h('div');
     const resetDraft = () => {
       draft = { causes: new Set(), urgent: false, note: '', image: null };
@@ -56,12 +55,6 @@ export default {
     resetDraft();
     const capture = h('form.capture.task-capture', { onsubmit: e => { e.preventDefault(); add(); } },
       input, detailsHolder, h('div.capture-row', null, h('span'), h('button.btn.primary', { type: 'submit' }, 'Add')));
-    // подробности видны, пока поле в фокусе или в черновике что-то есть
-    capture.addEventListener('focusin', () => capture.classList.add('expanded'));
-    capture.addEventListener('focusout', () => setTimeout(() => {
-      const busy = capture.contains(document.activeElement) || input.value || draft.causes.size || draft.urgent || draft.note || draft.image;
-      if (!busy) capture.classList.remove('expanded');
-    }, 150));
 
     async function add() {
       const text = input.value.trim();

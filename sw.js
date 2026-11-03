@@ -1,6 +1,6 @@
 // Кэширует само приложение, чтобы оно открывалось без интернета.
 // При обновлении приложения увеличь номер версии.
-const CACHE = 'kokoro-v6';
+const CACHE = 'kokoro-v7';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'css/base.css',
   'js/app.js', 'js/core/db.js', 'js/core/prefs.js', 'js/core/sync.js', 'js/core/ui.js', 'js/core/dates.js', 'js/core/menu.js', 'js/core/images.js', 'js/core/bits.js',
   'js/modules/index.js', 'js/modules/home.js', 'js/modules/widgets.js', 'js/modules/thoughts.js', 'js/modules/tasks.js', 'js/modules/later.js',

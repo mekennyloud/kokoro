@@ -38,4 +38,16 @@ show();
 startAutoSync();
 
 navigator.storage?.persist?.();   // просим браузер не чистить данные при нехватке места
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js');
+// обновления: при каждом возвращении в приложение спрашиваем, нет ли новой версии; когда новая версия
+// скачалась — перезагружаемся сами (но не посреди набора текста — тогда при следующем возвращении)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  const sw = navigator.serviceWorker;
+  const hadController = !!sw.controller;
+  let pending = false;
+  const typing = () => ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) && document.activeElement.value;
+  const reloadIfIdle = () => { if (pending && !typing()) location.reload(); };
+  sw.register('sw.js').then(reg => {
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { reg.update().catch(() => {}); reloadIfIdle(); } });
+  });
+  sw.addEventListener('controllerchange', () => { if (hadController) { pending = true; reloadIfIdle(); } });
+}

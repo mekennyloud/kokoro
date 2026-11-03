@@ -228,8 +228,7 @@ h2 { font-size: 17px; margin: 0; }
 .task-group { display: grid; gap: 8px; }
 .task-group-title { font-size: 15px; }
 .task-group .tasks { gap: 12px; padding-top: 4px; }
-.task-details { display: none; gap: 10px; margin-top: 10px; }
-.task-capture.expanded .task-details, .task.editing .task-details { display: grid; }
+.task-details { display: grid; gap: 10px; margin-top: 10px; }
 .task-options { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .urgency { display: flex; gap: 6px; }
 .task-note-input { width: 100%; resize: vertical; min-height: 70px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); outline: none; font-size: 15px; }
