@@ -1,0 +1,6 @@
+design/refs/
+.DS_Store
+__pycache__/
+*.db
+*.db-*
+server.log
