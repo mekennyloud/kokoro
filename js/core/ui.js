@@ -16,6 +16,32 @@ export function h(tag, props, ...kids) {
   return el;
 }
 
+/** поле «написать и сохранить»: многострочное растёт по мере текста, ⌘/Ctrl+Enter — сохранить
+ *  (однострочное — просто Enter). onSubmit(text) может вернуть false, чтобы текст не стирался. */
+export function composer({ placeholder, button = 'Записать', multiline = true, onSubmit, extra = null, className = '' }) {
+  const grow = () => { if (multiline) { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; } };
+  const input = multiline
+    ? h('textarea.capture-input', { placeholder, rows: 2, oninput: grow,
+        onkeydown: e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); } } })
+    : h('input.capture-input.single', { placeholder, autocomplete: 'off', enterKeyHint: 'done' });
+  async function submit() {
+    const text = input.value.trim();
+    if (!text) return input.focus();
+    if (await onSubmit(text) === false) return;
+    input.value = ''; input.style.height = '';
+    input.focus();
+  }
+  const el = h('form.capture' + (className ? '.' + className : ''), { onsubmit: e => { e.preventDefault(); submit(); } },
+    input, h('div.capture-row', null, extra || h('span'), h('button.btn.primary', { type: 'submit' }, button)));
+  return { el, input };
+}
+
+/** кнопка удаления с «Вернуть» во всплывашке */
+export async function removeWithUndo(db, rec, text = 'Удалено') {
+  await db.remove(rec.id);
+  toast(text, { label: 'Вернуть', run: async () => db.save({ ...(await db.get(rec.id)), deleted: false }) });
+}
+
 let toastTimer;
 /** короткое сообщение внизу; action — { label, run } для кнопки вроде «Вернуть» */
 export function toast(text, action) {

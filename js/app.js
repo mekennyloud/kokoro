@@ -1,6 +1,7 @@
-// Оболочка приложения: навигация между разделами (адрес вида #thoughts) и запуск синхронизации.
+// Оболочка приложения: навигация между разделами (адрес вида #thoughts), меню «⋯» и запуск синхронизации.
 import { sections, extras } from './modules/index.js';
 import { startAutoSync } from './core/sync.js';
+import { setupMenu, applyTheme } from './core/menu.js';
 import { h } from './core/ui.js';
 
 const all = [...sections, ...extras];
@@ -14,17 +15,10 @@ function current() {
 }
 
 function renderNav(active) {
-  // пока раздел один, нижняя навигация не нужна — только кнопка настроек
-  nav.replaceChildren(
-    ...(sections.length > 1 ? sections.map(m =>
-      h('a.nav-item' + (m === active ? '.on' : ''), { href: '#' + m.id, 'aria-current': m === active ? 'page' : null },
-        h('span.nav-icon', { 'aria-hidden': 'true' }, m.icon), h('span', null, m.title))) : []),
-  );
+  nav.replaceChildren(...sections.map(m =>
+    h('a.nav-item' + (m === active ? '.on' : ''), { href: '#' + m.id, 'aria-current': m === active ? 'page' : null },
+      h('span.nav-icon', { 'aria-hidden': 'true' }, m.icon), h('span.nav-label', null, m.short || m.title))));
   nav.hidden = sections.length < 2;
-  const gear = document.getElementById('gear');
-  gear.href = active.id === 'settings' ? '#' + sections[0].id : '#settings';
-  gear.textContent = active.id === 'settings' ? '✕' : '⚙';
-  gear.setAttribute('aria-label', active.id === 'settings' ? 'Закрыть настройки' : 'Настройки');
 }
 
 function show() {
@@ -34,9 +28,12 @@ function show() {
   main.dataset.section = m.id;
   unmount = m.mount(main) || null;
   renderNav(m);
+  scrollTo(0, 0);
 }
 
 addEventListener('hashchange', show);
+applyTheme();
+setupMenu(document.getElementById('menu-btn'));
 show();
 startAutoSync();
 

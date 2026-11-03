@@ -1,9 +1,10 @@
 // Кэширует само приложение, чтобы оно открывалось без интернета.
 // При обновлении приложения увеличь номер версии.
-const CACHE = 'kokoro-v1';
+const CACHE = 'kokoro-v2';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'css/base.css',
-  'js/app.js', 'js/core/db.js', 'js/core/prefs.js', 'js/core/sync.js', 'js/core/ui.js',
-  'js/modules/index.js', 'js/modules/thoughts.js', 'js/modules/settings.js',
+  'js/app.js', 'js/core/db.js', 'js/core/prefs.js', 'js/core/sync.js', 'js/core/ui.js', 'js/core/dates.js', 'js/core/menu.js',
+  'js/modules/index.js', 'js/modules/home.js', 'js/modules/thoughts.js', 'js/modules/tasks.js', 'js/modules/later.js',
+  'js/modules/calendar.js', 'js/modules/uneasy.js', 'js/modules/settings.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 // cache: 'reload' — берём файлы прямо с сервера, мимо HTTP-кэша браузера,

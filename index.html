@@ -11,10 +11,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="css/base.css">
+<script>try { const t = JSON.parse(localStorage.getItem('kokoro:theme')); if (t && t !== 'auto') document.documentElement.dataset.theme = t; } catch {}</script>
 </head>
 <body>
 <div class="app">
-  <a id="gear" class="gear" href="#settings" aria-label="Настройки">⚙</a>
+  <button id="menu-btn" class="menu-btn" aria-label="Меню" aria-haspopup="menu" aria-expanded="false">⋯</button>
   <main id="main"></main>
   <nav id="nav" class="nav" hidden></nav>
 </div>
