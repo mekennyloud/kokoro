@@ -4,6 +4,7 @@
 import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
 import { h, composer, removeWithUndo, toast, addFlow } from '../core/ui.js';
+import { hero } from '../core/bits.js';
 
 const PRESETS = [['In a week', d => dates.addDays(d, 7)], ['In a month', d => dates.addMonths(d, 1)],
   ['In 3 months', d => dates.addMonths(d, 3)], ['In 6 months', d => dates.addMonths(d, 6)]];
@@ -49,7 +50,7 @@ export default {
     const doneEl = h('section.done-block');
 
     const flow = addFlow(capture, input, 'Remember something');
-    root.append(h('header.page-head', null, h('h1', null, 'Don’t want to remember, but have to')), capture, flow.fab, listEl, doneEl);
+    root.append(hero('Later', 'later-hero', 'I’ll remember it for you').el, capture, flow.fab, listEl, doneEl);
 
     function row(l) {
       if (editId === l.id) {
@@ -61,11 +62,13 @@ export default {
           h('button.btn.primary', { onclick: save }, 'Save'),
           h('button.btn', { onclick: () => { editId = null; render(); } }, 'Cancel')));
       }
-      const open = openId === l.id, n = dates.daysFrom(l.date);
-      return h('li.later-item' + (open ? '.open' : '') + (l.done ? '.done' : ''), null,
+      const open = openId === l.id, n = dates.daysFrom(l.date), d = dates.parse(l.date);
+      const hot = !l.done && n <= 7;   // неделя и меньше — подсвечиваем красным
+      return h('li.later-item' + (open ? '.open' : '') + (l.done ? '.done' : '') + (hot ? '.hot' : ''), null,
         h('button.later-main', { onclick: () => { openId = open ? null : l.id; render(); } },
-          h('span.later-date', null, h('b', null, dates.short(l.date)), h('span' + (n < 0 && !l.done ? '.past' : ''), null, dates.relative(l.date))),
-          h('span.later-text', null, l.text)),
+          h('span.later-date', null, h('b', null, String(d.getDate())),
+            h('span', null, d.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase() + (d.getFullYear() !== new Date().getFullYear() ? ` ’${String(d.getFullYear()).slice(2)}` : ''))),
+          h('span.later-text', null, h('b', null, l.text), h('span' + (n < 0 && !l.done ? '.past' : ''), null, dates.relative(l.date)))),
         open && h('div.buttons', null,
           h('button.btn', { onclick: () => { openId = null; db.save({ ...l, done: !l.done, doneAt: l.done ? null : Date.now() }); } }, l.done ? 'Not done' : 'Done'),
           h('button.btn', { onclick: () => { editId = l.id; openId = null; render(); } }, 'Edit'),

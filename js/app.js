@@ -29,6 +29,7 @@ function show() {
   unmount?.();
   main.replaceChildren();
   main.dataset.section = m.id;
+  document.documentElement.dataset.section = m.id;   // цвет фона раздела — в css/base.css
   unmount = m.mount(main) || null;
   renderNav(m);
   scrollTo(0, 0);

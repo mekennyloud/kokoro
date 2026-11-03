@@ -1,6 +1,7 @@
 // Общие кусочки для разделов: стикеры сфер жизни (работа, учёба, семья…) и картинка в записи.
 import { h } from './ui.js';
 import { pickImage } from './images.js';
+import * as db from './db.js';
 
 export const CAUSES = [
   ['work', '💼', 'Work'], ['personal', '💗', 'Personal'], ['study', '📚', 'Study'],
@@ -49,4 +50,15 @@ export function noteField(state) {
   };
   render();
   return el;
+}
+
+/** шапка раздела — цветная панель с заголовком, строкой-подписью и персонажем из слота art (tools/art.py).
+ *  Возвращает { el, setSub(text) }. Без картинки в слоте — просто панель с заголовком. */
+export function hero(title, slot, sub = '') {
+  const subEl = h('span.hero-sub', null, sub);
+  const el = h('header.hero' + (title.length > 12 ? '.long' : ''), null, h('h1', null, title), subEl);
+  db.get('art-' + slot).then(a => {
+    if (a && !a.deleted && a.image) el.append(h('img.hero-art', { src: a.image, alt: '' }));
+  });
+  return { el, setSub: text => { subEl.textContent = text; } };
 }

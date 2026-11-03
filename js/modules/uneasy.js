@@ -4,7 +4,7 @@
 // Записи: uneasy { text, causes: [id], image: data:…|null, reflection, released, releasedAt }.
 import * as db from '../core/db.js';
 import { h, removeWithUndo, when, addFlow } from '../core/ui.js';
-import { causePicker, imageField, stickers } from '../core/bits.js';
+import { causePicker, imageField, stickers, hero } from '../core/bits.js';
 
 // радостный кот для счётчика «Let go»: прыгает «happy-happy-happy»; свою гифку можно положить в слот uneasy-letgo
 const CAT = `<svg viewBox="0 0 80 80" aria-hidden="true"><g class="cat">
@@ -75,7 +75,7 @@ export default {
     const relEl = h('section.done-block');
 
     const flow = addFlow(capture, text, 'Tell what happened');
-    root.append(h('header.page-head', null, h('h1', null, 'Not happy about this')), counterEl, capture, flow.fab, listEl, relEl);
+    root.append(hero('Not happy about this', 'uneasy-hero', 'who upset you?').el, counterEl, capture, flow.fab, listEl, relEl);
 
     // ── отпустить ──
     async function letGo(u, li) {
@@ -136,12 +136,11 @@ export default {
     function render() {
       const open = items.filter(u => !u.released), rel = items.filter(u => u.released).sort((a, b) => b.releasedAt - a.releasedAt);
       const cat = h('span.letgo-cat');
-      if (catGif) cat.append(h('img', { src: catGif, alt: '' })); else cat.innerHTML = CAT;
+      if (catGif) { cat.classList.add('gif'); cat.append(h('img', { src: catGif, alt: '' })); } else cat.innerHTML = CAT;
       counterEl.replaceChildren(h('button.letgo' + (bump ? '.party' : ''), {
         onclick: () => { showReleased = !showReleased; render(); }, 'aria-expanded': showReleased ? 'true' : 'false',
         'aria-label': `Already let go: ${rel.length}. Show what you let go`,
-      }, cat, h('span.letgo-text', null, h('small', null, 'Already let go'), h('b', null, String(rel.length)),
-        h('small.letgo-happy', null, rel.length ? 'happy · happy · happy' : 'waiting to be happy'))));
+      }, cat, h('span.letgo-text', null, h('small', null, 'Already let go'), h('b', null, String(rel.length)))));
       bump = false;
       listEl.replaceChildren(...(open.length ? open.map(row) : [h('li.empty', null, 'Nothing bothering you right now. Nice.')]));
       relEl.replaceChildren(...(showReleased && rel.length ? [h('h2', null, 'Let go'), h('ul.thoughts.uneasy-list', null, rel.map(row))] : []));

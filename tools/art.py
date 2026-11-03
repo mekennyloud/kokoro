@@ -7,7 +7,7 @@
                                                   его делает tools/cutout.swift)
     python3 tools/art.py <слот> --clear        — убрать картинку из слота
 
-Картинка уменьшается до 560 px по длинной стороне. Слоты: home-cycle, home-manicure, home-zumba, home-exam, uneasy-letgo.
+Картинка уменьшается до 560 px по длинной стороне. Слоты: home-*, uneasy-letgo, tasks-hero, thoughts-hero, uneasy-hero, later-hero, calendar-hero.
 GIF до 1,5 МБ кладётся как есть — остаётся живой.
 """
 import base64
@@ -28,6 +28,11 @@ SLOTS = {
     "home-zumba": "главная · зумба (стикер)",
     "home-exam": "главная · сессия (печать на красном)",
     "uneasy-letgo": "Not happy · счётчик Let go (можно GIF)",
+    "tasks-hero": "To do · шапка",
+    "thoughts-hero": "Thoughts · шапка",
+    "uneasy-hero": "Not happy · шапка",
+    "later-hero": "Later · шапка",
+    "calendar-hero": "Calendar · персонажи месяца",
 }
 MAX = 560
 

@@ -5,7 +5,7 @@
 // Записи: task { text, done, doneAt, urgent, causes: [id], note, image: data:…|null }.
 import * as db from '../core/db.js';
 import { h, removeWithUndo, addFlow } from '../core/ui.js';
-import { causePicker, imageField, stickers, noteField } from '../core/bits.js';
+import { causePicker, imageField, stickers, noteField, hero } from '../core/bits.js';
 
 /** переключатель «срочно / подождёт»; state.urgent меняется на месте */
 function urgencyToggle(state) {
@@ -58,7 +58,8 @@ export default {
     const listEl = h('div.task-groups');
     const flow = addFlow(capture, input, 'New task');
     if (doneView) root.append(h('header.page-head.with-back', null, h('a.back', { href: '#tasks' }, '← To do'), h('h1', null, 'Done')), listEl);
-    else root.append(h('header.page-head', null, h('h1', null, 'To do')), capture, flow.fab, listEl);
+    const head = hero('To do', 'tasks-hero');
+    if (!doneView) root.append(head.el, capture, flow.fab, listEl);
 
     const toggle = t => db.save({ ...t, done: !t.done, doneAt: t.done ? null : Date.now() });
 
@@ -96,9 +97,10 @@ export default {
       }
       const open = tasks.filter(t => !t.done);
       const urgent = open.filter(t => t.urgent), wait = open.filter(t => !t.urgent);
+      head.setSub(open.length ? `${open.length} left` + (urgent.length ? ` · ${urgent.length} urgent` : '') : 'all clear');
       const group = (title, list) => h('section.task-group', null, title && h('h2.task-group-title', null, title), h('ul.tasks', null, list.map(row)));
       listEl.replaceChildren(...(!open.length ? [h('p.empty', null, 'Nothing to do. Enjoy.')]
-        : urgent.length ? [group('🔥 Urgent', urgent), wait.length && group('🌿 Can wait', wait)].filter(Boolean)
+        : urgent.length ? [group('Urgent', urgent), wait.length && group('Can wait', wait)].filter(Boolean)
         : [group(null, wait)]));
     }
 

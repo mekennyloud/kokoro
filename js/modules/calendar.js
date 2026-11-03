@@ -1,4 +1,5 @@
-// Календарь: свои планы на даты. Не связан с «Don't want to remember» — там то, что хочется забыть до срока,
+// Календарь в духе бумажного постера: огромный месяц, «персонажи месяца», сегодня обведено маркером.
+// Свои планы на даты. Не связан с «Don't want to remember» — там то, что хочется забыть до срока,
 // а здесь то, что планируешь. Нажми на название месяца — можно сразу перейти к любому месяцу и году.
 // Ниже — планы за выбранный день, неделю, месяц, следующий месяц или все сразу.
 // Записи: event { text, date: 'ГГГГ-ММ-ДД' }.
@@ -6,6 +7,10 @@ import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
 import { pref, setPref } from '../core/prefs.js';
 import { h, removeWithUndo, plusIcon } from '../core/ui.js';
+
+// сегодня — обведено красным, будто маркером от руки; дни с планами — цветной штрих
+const MARKER = '<svg class="cal-marker" viewBox="0 0 50 46" aria-hidden="true"><path d="M8 24c0-12 12-19 22-18 12 1 17 10 15 19-2 10-12 16-22 15C12 39 5 31 9 19c3-8 12-12 20-11" fill="none" stroke="#f0461f" stroke-width="2.6" stroke-linecap="round"/></svg>';
+const DOTS = ['#8fe3c2', '#f6a0b8', '#ffc61a', '#9db0ff', '#f0461f', '#b9a7ff'];
 
 const RANGES = [['day', 'This day'], ['week', 'This week'], ['month', 'This month'], ['next', 'Next month'], ['all', 'All plans']];
 
@@ -32,7 +37,14 @@ export default {
     let jumping = false, editId = null, adding = false;
     let events = [];
 
-    const titleEl = h('button.cal-title', { onclick: () => { jumping = !jumping; render(); }, 'aria-expanded': 'false' });
+    const titleEl = h('button.cal-title', { onclick: () => { jumping = !jumping; render(); }, 'aria-expanded': 'false', 'aria-label': 'Pick month and year' });
+    const prevEl = h('button.cal-shift', { onclick: () => shift(-1) });
+    const nextEl = h('button.cal-shift', { onclick: () => shift(1) });
+    // «персонажи месяца» — картинка из слота calendar-hero (tools/art.py)
+    const poster = h('div.cal-poster', null, titleEl);
+    db.get('art-calendar-hero').then(a => {
+      if (a && !a.deleted && a.image) poster.append(h('img.cal-art', { src: a.image, alt: '' }), h('span.cal-motm', null, 'Characters of the month'));
+    });
     const jumpEl = h('div');
     const gridEl = h('div.cal-grid', { role: 'grid' });
     const dayEl = h('section.cal-day');
@@ -48,15 +60,10 @@ export default {
     } }, plusIcon());
 
     root.append(
-      h('header.page-head', null, h('h1', null, 'Calendar')),
-      h('section.card.cal', null,
-        h('div.cal-head', null,
-          h('button.icon-btn', { onclick: () => shift(-1), 'aria-label': 'Previous month' }, '‹'),
-          titleEl,
-          h('button.icon-btn', { onclick: () => shift(1), 'aria-label': 'Next month' }, '›')),
-        jumpEl,
-        gridEl,
-        h('button.link.cal-today', { onclick: () => { month = new Date(now.getFullYear(), now.getMonth(), 1); selected = dates.today(); jumping = false; render(); } }, 'Today')),
+      h('div.cal-top', null, prevEl, nextEl,
+        h('button.cal-shift', { onclick: () => { month = new Date(now.getFullYear(), now.getMonth(), 1); selected = dates.today(); jumping = false; render(); } }, 'Today')),
+      poster, jumpEl,
+      h('section.cal', null, gridEl),
       dayEl, rangesEl, listEl, fab,
     );
 
@@ -80,7 +87,13 @@ export default {
 
     // ── сетка месяца ──
     function renderGrid() {
-      titleEl.textContent = dates.monthTitle(month);
+      const name = m => m.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase().replace('.', '');
+      // длинный месяц — в две строки, как на постере: NOVEM / BER
+      const full = month.toLocaleDateString('en-GB', { month: 'long' }).toUpperCase();
+      const parts = full.length >= 8 ? [full.slice(0, -3), h('br'), full.slice(-3)] : [full];
+      titleEl.replaceChildren(h('b' + (full.length === 7 ? '.mid' : ''), null, ...parts), h('span', null, String(month.getFullYear())));
+      prevEl.textContent = '‹ ' + name(new Date(month.getFullYear(), month.getMonth() - 1, 1));
+      nextEl.textContent = name(new Date(month.getFullYear(), month.getMonth() + 1, 1)) + ' ›';
       const t = dates.today();
       const marked = new Set(events.map(e => e.date));
       const first = (month.getDay() + 6) % 7;   // понедельник — первый
@@ -91,7 +104,10 @@ export default {
         const s = dates.ymd(new Date(month.getFullYear(), month.getMonth(), d));
         const cls = (s === t ? '.today' : '') + (s === selected ? '.sel' : '') + (marked.has(s) ? '.marked' : '')
           + ((first + d - 1) % 7 >= 5 ? '.weekend' : '');
-        cells.push(h('button.cal-cell' + cls, { onclick: () => { selected = s; render(); }, 'aria-label': dates.long(s) }, String(d)));
+        const cell = h('button.cal-cell' + cls, { onclick: () => { selected = s; render(); }, 'aria-label': dates.long(s) }, h('span', null, String(d)));
+        if (s === t) cell.insertAdjacentHTML('beforeend', MARKER);
+        if (marked.has(s)) cell.append(h('i.cal-dot', { style: `background: ${DOTS[d % DOTS.length]}` }));
+        cells.push(cell);
       }
       gridEl.replaceChildren(...dates.WEEKDAYS.map(w => h('span.cal-wd', null, w)), ...cells);
     }
@@ -125,7 +141,10 @@ export default {
           h('button.btn', { onclick: () => { editId = null; render(); } }, 'Cancel'),
           h('button.btn.danger', { onclick: () => { editId = null; removeWithUndo(db, e); } }, 'Delete')));
       }
-      return h('li.event', null, h('button.event-text', { onclick: () => { editId = e.id; render(); } }, e.text));
+      const d = dates.parse(e.date);
+      return h('li.event' + (e.date < dates.today() ? '.past' : ''), null, h('button.event-text', { onclick: () => { editId = e.id; render(); } },
+        h('span.event-date', null, h('b', null, String(d.getDate())), h('span', null, d.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase())),
+        h('span', null, e.text)));
     }
 
     function renderList() {
@@ -139,12 +158,7 @@ export default {
           next: 'Nothing planned next month yet.', all: 'No plans yet. Pick a day above and add one.' }[range];
         return listEl.replaceChildren(h('p.hint', null, empty));
       }
-      if (range === 'day') return listEl.replaceChildren(h('ul.events', null, items.map(event)));
-      const byDate = Map.groupBy ? Map.groupBy(items, e => e.date) : items.reduce((m, e) => m.set(e.date, [...(m.get(e.date) || []), e]), new Map());
-      const t = dates.today();
-      listEl.replaceChildren(...[...byDate].map(([date, list]) => h('section.cal-group' + (date < t ? '.past' : ''), null,
-        h('h3', null, `${dates.long(date)} · ${dates.relative(date)}`),
-        h('ul.events', null, list.map(event)))));
+      listEl.replaceChildren(h('ul.events', null, items.map(event)));   // у каждого плана — своя дата-«корешок»
     }
 
     function render() {

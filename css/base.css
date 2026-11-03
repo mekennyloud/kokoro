@@ -562,3 +562,77 @@ h2 { font: 400 16px/1.15 var(--display); text-transform: uppercase; letter-spaci
 .letgo.party .paw.r { animation: paw-r .55s ease-in-out 6, paw-r 2.6s ease-in-out 3.3s infinite; }
 .letgo.party .letgo-text b { animation: bump .6s ease-out 2; }
 @media (prefers-reduced-motion: reduce) { .cat, .paw, .tail { animation: none; } }
+
+/* ═════════ Разделы: свой цвет «выпуска» и шапка с персонажем (макет design/concepts/sections-v2) ═════════ */
+:root[data-section="tasks"]:not([data-theme="dark"]) { --bg: #c6f1df; --hero: #5ccf9f; --tab: #8fe3c2; }
+:root[data-section="thoughts"]:not([data-theme="dark"]) { --bg: #e7e0ff; --hero: #b9a7ff; --tab: #c9bcff; }
+:root[data-section="uneasy"]:not([data-theme="dark"]) { --bg: #ffe0e4; --hero: #ff8fa3; --tab: #ffb3c0; }
+:root[data-section="later"]:not([data-theme="dark"]) { --bg: #dfe5ff; --hero: #4d67f0; --hero-ink: var(--cream); --tab: #9db0ff; }
+:root[data-section="calendar"]:not([data-theme="dark"]) { --bg: var(--cream); --surface: #fff; }
+@media (prefers-color-scheme: dark) { :root[data-theme="auto"][data-section] { --bg: #141210; --surface: #221d17; } }
+:root[data-section="tasks"] { --hero: #5ccf9f; --tab: #8fe3c2; }
+:root[data-section="thoughts"] { --hero: #b9a7ff; --tab: #c9bcff; }
+:root[data-section="uneasy"] { --hero: #ff8fa3; --tab: #ffb3c0; }
+:root[data-section="later"] { --hero: #4d67f0; --hero-ink: var(--cream); --tab: #9db0ff; }
+.nav-item.on { background: var(--tab, var(--yellow)); }
+
+.hero { position: relative; height: 150px; margin: 52px 0 18px; padding: 14px 16px;
+  background: var(--hero, var(--yellow)); color: var(--hero-ink, var(--black));
+  border: var(--bw) solid var(--frame); border-radius: var(--radius); }
+.hero h1 { position: relative; z-index: 2; max-width: 58%; font-size: 30px; line-height: .95; }
+.hero-sub { position: absolute; z-index: 2; left: 16px; bottom: 14px; max-width: 55%; font: 700 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.hero-art { position: absolute; z-index: 1; right: 4px; bottom: 0; height: 112%; max-width: 50%; object-fit: contain; object-position: right bottom; pointer-events: none;
+  filter: drop-shadow(2.5px 0 0 #fff) drop-shadow(-2.5px 0 0 #fff) drop-shadow(0 2.5px 0 #fff) drop-shadow(0 -2.5px 0 #fff) drop-shadow(0 8px 12px rgb(0 0 0 / .25)); }
+@media (min-width: 760px) { .hero { height: 180px; } .hero h1 { font-size: 40px; } }
+
+/* To do: срочное — тонкая красная полоска слева */
+.task.urgent { background: var(--surface); box-shadow: inset 4px 0 0 var(--red); }
+.task-group-title { font-size: 14px; }
+
+/* Later: крупная дата слева, близкое — красным */
+.later-main { align-items: center; gap: 14px; padding: 12px 14px; }
+.later-date { width: 52px; flex: none; text-align: center; border-right: 2px dashed var(--hair); padding-right: 12px; display: grid; }
+.later-date b { font: 400 26px/1 var(--display); color: var(--ink); }
+.later-date span { font: 700 10px var(--mono); color: var(--muted); }
+.later-text { display: grid; gap: 2px; }
+.later-text b { font: 600 16px/1.3 var(--font); }
+.later-text > span { font: 700 11px var(--mono); color: var(--muted); }
+.later-item.hot .later-date b, .later-item.hot .later-text > span { color: var(--red); }
+
+/* Not happy: гифка-кот квадратиком */
+.letgo-cat.gif { border-radius: 14px; width: 84px; height: 84px; }
+.letgo-cat.gif img { object-fit: cover; mix-blend-mode: multiply; }
+
+/* Календарь: бумага, огромный месяц, персонажи месяца, маркер */
+.cal-top { display: flex; gap: 6px; align-items: center; height: 44px; padding-right: 56px; }
+.cal-shift { border: 0; background: none; color: var(--ink); font: 700 12px var(--mono); letter-spacing: .08em; padding: 8px 6px; }
+.cal-shift:last-child { margin-left: auto; text-decoration: underline; text-underline-offset: 3px; }
+.cal-poster { position: relative; min-height: 150px; margin: 6px 0 4px; }
+.cal-title { position: relative; z-index: 2; display: grid; justify-items: start; text-align: left; border: 0; background: none; padding: 0; color: var(--ink); max-width: 64%; }
+.cal-title b { font: 400 52px/.86 var(--display); color: var(--red); letter-spacing: -.02em; }
+.cal-title b.mid { font-size: 44px; }
+.cal-title span { font: 400 26px/1.2 var(--display); }
+.cal-art { position: absolute; z-index: 1; right: -4px; top: -6px; height: 150px; max-width: 44%; object-fit: contain; transform: rotate(5deg); pointer-events: none;
+  filter: drop-shadow(2.5px 0 0 #fff) drop-shadow(-2.5px 0 0 #fff) drop-shadow(0 2.5px 0 #fff) drop-shadow(0 -2.5px 0 #fff) drop-shadow(0 8px 12px rgb(0 0 0 / .25)); }
+.cal-motm { position: absolute; z-index: 2; right: 6px; top: 140px; background: var(--black); color: var(--yellow); font: 700 9px var(--mono); padding: 3px 7px; letter-spacing: .1em; text-transform: uppercase; transform: rotate(5deg); }
+.cal { margin-top: 10px; }
+.cal-wd { font-family: var(--mono); font-weight: 700; font-size: 10px; text-transform: uppercase; }
+.cal-cell { position: relative; height: 44px; border-radius: var(--radius); font-weight: 500; }
+.cal-cell span { position: relative; z-index: 1; }
+.cal-cell.today { box-shadow: none; font-weight: 800; }
+.cal-cell.sel { background: var(--ink); color: var(--bg); }
+.cal-cell.sel .cal-marker path { stroke: var(--yellow); }
+.cal-marker { position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px); pointer-events: none; }
+.cal-cell.marked::after { display: none; }
+.cal-dot { position: absolute; left: 50%; bottom: 5px; width: 14px; height: 4px; margin-left: -7px; border-radius: 2px; transform: rotate(-6deg); }
+.cal-day { margin-top: 18px; }
+/* планы — талончики с датой-корешком */
+.event { background: var(--surface); box-shadow: 0 1px 0 var(--hair); }
+.event.past { opacity: .55; }
+.event-text { display: flex; gap: 12px; align-items: center; }
+.event-date { width: 46px; flex: none; display: grid; text-align: center; border-right: 2px dashed var(--hair); padding-right: 10px; }
+.event-date b { font: 400 20px/1 var(--display); color: var(--red); }
+.event-date span { font: 700 9px var(--mono); }
+.event-text > span:last-child { font-weight: 600; }
+.hero.long h1 { font-size: 24px; }
+@media (min-width: 760px) { .hero.long h1 { font-size: 32px; } }

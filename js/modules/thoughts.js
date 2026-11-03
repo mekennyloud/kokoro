@@ -4,7 +4,7 @@
 import * as db from '../core/db.js';
 import { pref, setPref } from '../core/prefs.js';
 import { h, toast, when, addFlow } from '../core/ui.js';
-import { noteField } from '../core/bits.js';
+import { noteField, hero } from '../core/bits.js';
 
 const INBOX = 'inbox', ALL = 'all', DONE = 'done';
 
@@ -95,8 +95,9 @@ export default {
     const listEl = h('ul.thoughts');
 
     const flow = addFlow(capture, cap, 'New thought');
+    const head = hero('Thoughts', 'thoughts-hero');
     root.append(
-      h('header.page-head', null, h('h1', null, 'Thoughts')),
+      head.el,
       capture, flow.fab,
       h('div.thoughts-tools', null, filterBtn, search),
       shelvesEl,
@@ -259,6 +260,8 @@ export default {
 
     // ── всё вместе ──
     function render() {
+      const n = thoughts.filter(t => !t.done).length;
+      head.setSub(n === 1 ? '1 thought' : `${n} thoughts`);
       capWhere.textContent = '→ ' + (shelfName(target()) || 'Inbox');
       renderShelves();
       renderList();
