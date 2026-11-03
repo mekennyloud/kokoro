@@ -182,6 +182,31 @@ h2 { font-size: 17px; margin: 0; }
 .soon-item { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
 .soon-when { color: var(--muted); white-space: nowrap; }
 
+/* плитки на главной */
+.widgets-holder { margin-bottom: 16px; display: grid; gap: 10px; }
+.widgets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 760px) { .widgets { grid-template-columns: repeat(4, 1fr); } }
+.widget { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0; }
+.widget.editing { border-color: var(--ink); }
+.widget-main { display: grid; gap: 2px; justify-items: start; width: 100%; height: 100%; text-align: left; border: 0; background: none; padding: 12px 14px 14px; }
+.widget-title { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.widget-emoji { font-size: 16px; }
+.widget-big { font-size: 24px; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; margin-top: 4px; }
+.widget-small { font-size: 13px; color: var(--muted); }
+.widget.period .widget-big { color: var(--danger); }
+.widget.late .widget-big { color: var(--danger); }
+.widget.zumba .widget-main { padding-right: 64px; }
+.widget-plus {
+  position: absolute; right: 10px; bottom: 10px; width: 50px; height: 50px; border-radius: 50%;
+  border: 0; background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 800;
+}
+.widget-plus.pop { animation: bump .45s ease-out; }
+.widget-editor { max-width: none; }
+.widget-editor h3 { margin: 0; font-size: 17px; }
+.widget-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.widget-field input { min-height: 40px; padding: 6px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); width: 9.5em; }
+.widget-field input[type="number"] { width: 6em; }
+
 /* ── Надо сделать ── */
 .tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .task { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 4px 4px 8px; }

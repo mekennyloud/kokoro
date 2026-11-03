@@ -1,9 +1,10 @@
 // Главная: место, где говоришь сама с собой — крупно и капсом: «УТРОМ ПЬЁМ ЖЕЛЕЗО!», «ЗАВТРА С УТРА ЗУМБА».
-// Ниже — то, что скоро подойдёт из «Не хочу помнить, но надо».
+// Сверху — плитки (цикл, зумба, маникюр, сессия), ниже — то, что скоро подойдёт из «Don't want to remember».
 // Записи: note { text }.
 import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
 import { h, composer, removeWithUndo } from '../core/ui.js';
+import { mountWidgets } from './widgets.js';
 
 const SOON_DAYS = 7;
 
@@ -22,10 +23,12 @@ export default {
     const notesEl = h('div.notes');
     const soonEl = h('section.soon');
 
+    const widgetsEl = h('section.widgets-holder');
     root.append(
       h('header.page-head', null, h('h1.date-title', null, dates.long(dates.today()))),
-      capture, notesEl, soonEl,
+      widgetsEl, capture, notesEl, soonEl,
     );
+    const offWidgets = mountWidgets(widgetsEl);
 
     function note(n) {
       if (editId === n.id) {
@@ -64,6 +67,7 @@ export default {
     }
 
     load();
-    return db.onChange(load);
+    const off = db.onChange(load);
+    return () => { off(); offWidgets(); };
   },
 };
