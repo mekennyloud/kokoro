@@ -1,7 +1,7 @@
 {
   "name": "Kokoro",
   "short_name": "Kokoro",
-  "description": "Мысли, планы и всё, что не хочется забыть",
+  "description": "Thoughts, plans and everything you don’t want to forget",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -8,10 +8,10 @@ const INBOX = 'inbox', ALL = 'all', DONE = 'done';
 
 // полки по умолчанию; id постоянные, чтобы iPhone и iPad при первом запуске не создали по своей копии
 const DEFAULT_SHELVES = [
-  { id: 'shelf-forget', name: 'Не забыть' },
-  { id: 'shelf-work', name: 'Работа' },
-  { id: 'shelf-sport', name: 'Спорт' },
-  { id: 'shelf-ideas', name: 'Идеи' },
+  { id: 'shelf-forget', name: 'Don’t forget' },
+  { id: 'shelf-work', name: 'Work' },
+  { id: 'shelf-sport', name: 'Sport' },
+  { id: 'shelf-ideas', name: 'Ideas' },
 ];
 
 async function seedShelves() {
@@ -22,9 +22,19 @@ async function seedShelves() {
     if (!have.has(s.id)) await db.save({ ...s, type: 'shelf', order: i, updated: 1 });
 }
 
+// интерфейс стал английским: полки по умолчанию со старыми русскими названиями переименовываем,
+// а те, что переименованы вручную, не трогаем
+const OLD_NAMES = { 'shelf-forget': 'Не забыть', 'shelf-work': 'Работа', 'shelf-sport': 'Спорт', 'shelf-ideas': 'Идеи' };
+async function translateShelves() {
+  for (const s of DEFAULT_SHELVES) {
+    const r = await db.get(s.id);
+    if (r && r.name === OLD_NAMES[s.id]) await db.save({ ...r, name: s.name });
+  }
+}
+
 export default {
   id: 'thoughts',
-  title: 'Мысли',
+  title: 'Thoughts',
   icon: '✎',
 
   mount(root) {
@@ -35,19 +45,19 @@ export default {
 
     const shelfName = id => shelves.find(s => s.id === id)?.name;
     const inShelf = t => (t.shelf && shelfName(t.shelf) ? t.shelf : null);   // полки нет — значит во «Входящих»
-    const viewName = () => view === INBOX ? 'Входящие' : view === ALL ? 'Все' : view === DONE ? 'Готово' : shelfName(view);
+    const viewName = () => view === INBOX ? 'Inbox' : view === ALL ? 'All' : view === DONE ? 'Done' : shelfName(view);
     // куда попадёт новая мысль: в открытую полку, иначе во «Входящие»
     const target = () => (shelfName(view) ? view : null);
 
     // ── запись ──
     const cap = h('textarea.capture-input', {
-      placeholder: 'Что в голове?', rows: 2, enterKeyHint: 'enter',
+      placeholder: 'What’s on your mind?', rows: 2, enterKeyHint: 'enter',
       oninput: () => { cap.style.height = 'auto'; cap.style.height = cap.scrollHeight + 'px'; },
       onkeydown: e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); add(); } },
     });
     const capWhere = h('span.capture-where');
     const capture = h('form.capture', { onsubmit: e => { e.preventDefault(); add(); } },
-      cap, h('div.capture-row', null, capWhere, h('button.btn.primary', { type: 'submit' }, 'Записать')));
+      cap, h('div.capture-row', null, capWhere, h('button.btn.primary', { type: 'submit' }, 'Save')));
 
     async function add() {
       const text = cap.value.trim();
@@ -59,16 +69,16 @@ export default {
 
     // ── поиск ──
     const search = h('input.search', {
-      type: 'search', placeholder: 'Поиск по всем мыслям', enterKeyHint: 'search',
+      type: 'search', placeholder: 'Search all thoughts', enterKeyHint: 'search',
       oninput: () => { query = search.value.trim().toLowerCase(); renderList(); },
     });
 
-    const shelvesEl = h('nav.shelves', { 'aria-label': 'Полки' });
+    const shelvesEl = h('nav.shelves', { 'aria-label': 'Shelves' });
     const headEl = h('div.list-head');
     const listEl = h('ul.thoughts');
 
     root.append(
-      h('header.page-head', null, h('h1', null, 'Мысли')),
+      h('header.page-head', null, h('h1', null, 'Thoughts')),
       capture,
       h('div.thoughts-layout', null, shelvesEl, h('section.thoughts-main', null, search, headEl, listEl)),
     );
@@ -85,16 +95,16 @@ export default {
         h('button.chip' + cls + (view === id ? '.on' : ''), { onclick: () => go(id), 'aria-current': view === id ? 'true' : null }, name);
       const adder = addingShelf
         ? h('form.chip-form', { onsubmit: e => { e.preventDefault(); createShelf(e.target.elements.name.value); } },
-            h('input.chip-input', { name: 'name', placeholder: 'Название', autocomplete: 'off',
+            h('input.chip-input', { name: 'name', placeholder: 'Name', autocomplete: 'off',
               onblur: e => { if (!e.target.value.trim()) { addingShelf = false; renderShelves(); } } }))
-        : h('button.chip.ghost', { onclick: () => { addingShelf = true; renderShelves(); shelvesEl.querySelector('input').focus(); } }, '+ полка');
+        : h('button.chip.ghost', { onclick: () => { addingShelf = true; renderShelves(); shelvesEl.querySelector('input').focus(); } }, '+ shelf');
       shelvesEl.replaceChildren(
-        chip(INBOX, 'Входящие'),
+        chip(INBOX, 'Inbox'),
         ...shelves.map(s => chip(s.id, s.name)),
         adder,
         h('span.shelves-gap'),
-        chip(ALL, 'Все', '.quiet'),
-        chip(DONE, 'Готово', '.quiet'),
+        chip(ALL, 'All', '.quiet'),
+        chip(DONE, 'Done', '.quiet'),
       );
     }
 
@@ -118,7 +128,7 @@ export default {
       const s = shelves.find(s => s.id === view);
       if (!s) return;
       const inside = thoughts.filter(t => t.shelf === s.id);
-      const msg = inside.length ? `Удалить полку «${s.name}»? Мысли с неё (${inside.length}) вернутся во «Входящие».` : `Удалить полку «${s.name}»?`;
+      const msg = inside.length ? `Delete shelf “${s.name}”? Its thoughts (${inside.length}) will go back to Inbox.` : `Delete shelf “${s.name}”?`;
       if (!confirm(msg)) return;
       for (const t of inside) await db.save({ ...t, shelf: null });
       await db.remove(s.id);
@@ -128,7 +138,7 @@ export default {
     // ── заголовок над списком ──
     function renderHead() {
       const isShelf = !!shelfName(view);
-      if (query) return headEl.replaceChildren(h('h2', null, 'Найдено'));
+      if (query) return headEl.replaceChildren(h('h2', null, 'Found'));
       if (isShelf && renamingShelf) {
         const commit = () => { if (renamingShelf) renameShelf(input.value); };
         const input = h('input.rename', { name: 'name', value: shelfName(view), autocomplete: 'off', onblur: commit,
@@ -139,8 +149,8 @@ export default {
       headEl.replaceChildren(
         h('h2', null, viewName()),
         ...(isShelf ? [h('div.head-tools', null,
-          h('button.link', { onclick: () => { renamingShelf = true; renderHead(); } }, 'Переименовать'),
-          h('button.link.danger', { onclick: deleteShelf }, 'Удалить полку'))] : []),
+          h('button.link', { onclick: () => { renamingShelf = true; renderHead(); } }, 'Rename'),
+          h('button.link.danger', { onclick: deleteShelf }, 'Delete shelf'))] : []),
       );
     }
 
@@ -156,7 +166,7 @@ export default {
       renderHead();
       const items = visible();
       if (!items.length) {
-        const empty = query ? 'Ничего не нашлось.' : view === DONE ? 'Здесь появится то, что уже сделано.' : 'Здесь пока тихо.';
+        const empty = query ? 'Nothing found.' : view === DONE ? 'Finished thoughts will show up here.' : 'Quiet here for now.';
         return listEl.replaceChildren(h('li.empty', null, empty));
       }
       const showShelf = query || view === ALL || view === DONE;
@@ -170,15 +180,15 @@ export default {
         h('button.thought-text', { onclick: () => { openId = open ? null : t.id; renderList(); }, 'aria-expanded': open }, t.text),
         h('div.thought-meta', null,
           h('span', null, when(t.created)),
-          showShelf && h('span.tag', null, shelfName(inShelf(t)) || 'Входящие')),
+          showShelf && h('span.tag', null, shelfName(inShelf(t)) || 'Inbox')),
         open && h('div.thought-actions', null,
-          !t.done && h('div.move', null, h('span.move-label', null, 'На полку'),
-            [{ id: null, name: 'Входящие' }, ...shelves].map(s =>
+          !t.done && h('div.move', null, h('span.move-label', null, 'Move to'),
+            [{ id: null, name: 'Inbox' }, ...shelves].map(s =>
               h('button.chip.small' + (inShelf(t) === s.id ? '.on' : ''), { onclick: () => move(t, s.id) }, s.name))),
           h('div.buttons', null,
-            h('button.btn', { onclick: () => toggleDone(t) }, t.done ? 'Вернуть' : 'Готово'),
-            h('button.btn', { onclick: () => { editId = t.id; renderList(); } }, 'Изменить'),
-            h('button.btn.danger', { onclick: () => del(t) }, 'Удалить'))),
+            h('button.btn', { onclick: () => toggleDone(t) }, t.done ? 'Not done' : 'Done'),
+            h('button.btn', { onclick: () => { editId = t.id; renderList(); } }, 'Edit'),
+            h('button.btn.danger', { onclick: () => del(t) }, 'Delete'))),
       );
     }
 
@@ -196,8 +206,8 @@ export default {
         if (text && text !== t.text) await db.save({ ...t, text }); else renderList();
       };
       const li = h('li.thought.editing', null, ta, h('div.buttons', null,
-        h('button.btn.primary', { onclick: done }, 'Сохранить'),
-        h('button.btn', { onclick: () => { editId = null; renderList(); } }, 'Отмена')));
+        h('button.btn.primary', { onclick: done }, 'Save'),
+        h('button.btn', { onclick: () => { editId = null; renderList(); } }, 'Cancel')));
       queueMicrotask(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); });
       return li;
     }
@@ -205,24 +215,24 @@ export default {
     async function move(t, shelf) {
       openId = null;
       await db.save({ ...t, shelf });
-      toast(`→ ${shelfName(shelf) || 'Входящие'}`);
+      toast(`→ ${shelfName(shelf) || 'Inbox'}`);
     }
 
     async function toggleDone(t) {
       openId = null;
       await db.save({ ...t, done: !t.done, doneAt: t.done ? null : Date.now() });
-      if (!t.done) toast('Отмечено как готово', { label: 'Вернуть', run: () => db.save({ ...t, done: false, doneAt: null }) });
+      if (!t.done) toast('Marked as done', { label: 'Undo', run: () => db.save({ ...t, done: false, doneAt: null }) });
     }
 
     async function del(t) {
       openId = null;
       await db.remove(t.id);
-      toast('Удалено', { label: 'Вернуть', run: async () => db.save({ ...(await db.get(t.id)), deleted: false }) });
+      toast('Deleted', { label: 'Undo', run: async () => db.save({ ...(await db.get(t.id)), deleted: false }) });
     }
 
     // ── всё вместе ──
     function render() {
-      capWhere.textContent = '→ ' + (shelfName(target()) || 'Входящие');
+      capWhere.textContent = '→ ' + (shelfName(target()) || 'Inbox');
       renderShelves();
       renderList();
     }
@@ -236,7 +246,7 @@ export default {
     }
 
     const off = db.onChange(load);
-    seedShelves().then(load);
+    seedShelves().then(translateShelves).then(load);
     return off;
   },
 };

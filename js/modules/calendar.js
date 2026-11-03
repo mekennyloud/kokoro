@@ -6,7 +6,7 @@ import { h } from '../core/ui.js';
 
 export default {
   id: 'calendar',
-  title: 'Календарь',
+  title: 'Calendar',
   icon: '▦',
 
   mount(root) {
@@ -21,14 +21,14 @@ export default {
     const shift = n => { month = new Date(month.getFullYear(), month.getMonth() + n, 1); render(); };
 
     root.append(
-      h('header.page-head', null, h('h1', null, 'Календарь')),
+      h('header.page-head', null, h('h1', null, 'Calendar')),
       h('section.card.cal', null,
         h('div.cal-head', null,
-          h('button.icon-btn', { onclick: () => shift(-1), 'aria-label': 'Предыдущий месяц' }, '‹'),
+          h('button.icon-btn', { onclick: () => shift(-1), 'aria-label': 'Previous month' }, '‹'),
           titleEl,
-          h('button.icon-btn', { onclick: () => shift(1), 'aria-label': 'Следующий месяц' }, '›')),
+          h('button.icon-btn', { onclick: () => shift(1), 'aria-label': 'Next month' }, '›')),
         gridEl,
-        h('button.link.cal-today', { onclick: () => { month = new Date(now.getFullYear(), now.getMonth(), 1); selected = dates.today(); render(); } }, 'Сегодня')),
+        h('button.link.cal-today', { onclick: () => { month = new Date(now.getFullYear(), now.getMonth(), 1); selected = dates.today(); render(); } }, 'Today')),
       dayEl,
     );
 
@@ -52,16 +52,16 @@ export default {
 
     function renderDay() {
       const items = later.filter(l => l.date === selected);
-      const input = h('input.field', { placeholder: 'Добавить на этот день', autocomplete: 'off', enterKeyHint: 'done' });
+      const input = h('input.field', { placeholder: 'Add to this day', autocomplete: 'off', enterKeyHint: 'done' });
       dayEl.replaceChildren(
         h('h2', null, `${dates.long(selected)} · ${dates.relative(selected)}`),
         items.length ? h('ul.cal-items', null, items.map(l => h('li' + (l.done ? '.done' : ''), null, h('a', { href: '#later' }, l.text))))
-          : h('p.hint', null, 'Ничего не записано.'),
+          : h('p.hint', null, 'Nothing planned.'),
         h('form.cal-add', { onsubmit: async e => {
           e.preventDefault();
           const text = input.value.trim();
           if (text) await db.save({ type: 'later', text, date: selected, done: false });
-        } }, input, h('button.btn', { type: 'submit' }, 'Добавить')),
+        } }, input, h('button.btn', { type: 'submit' }, 'Add')),
       );
     }
 

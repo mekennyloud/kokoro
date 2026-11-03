@@ -40,7 +40,7 @@ async function run() {
       cache: 'no-store',
       signal: ctl.signal,
     }).finally(() => clearTimeout(timer));
-    if (!res.ok) throw new Error('Mac ответил ' + res.status);
+    if (!res.ok) throw new Error('Mac replied ' + res.status);
     const { cursor, changes } = await res.json();
 
     // отправленное больше не «грязное» — если его не успели поменять, пока шёл запрос
@@ -63,7 +63,7 @@ async function run() {
     state.lastOk = Date.now(); setPref('lastSync', state.lastOk);
     state.error = '';
   } catch (e) {
-    state.error = e.name === 'AbortError' ? 'Mac не ответил' : (e.message === 'Failed to fetch' || e.name === 'TypeError') ? 'Mac недоступен' : e.message;
+    state.error = e.name === 'AbortError' ? 'Mac did not respond' : (e.message === 'Failed to fetch' || e.name === 'TypeError') ? 'Mac is unreachable' : e.message;
   } finally {
     state.busy = false; emit();
   }

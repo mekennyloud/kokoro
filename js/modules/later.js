@@ -5,8 +5,8 @@ import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
 import { h, composer, removeWithUndo, toast } from '../core/ui.js';
 
-const PRESETS = [['Через неделю', d => dates.addDays(d, 7)], ['Через месяц', d => dates.addMonths(d, 1)],
-  ['Через 3 месяца', d => dates.addMonths(d, 3)], ['Через полгода', d => dates.addMonths(d, 6)]];
+const PRESETS = [['In a week', d => dates.addDays(d, 7)], ['In a month', d => dates.addMonths(d, 1)],
+  ['In 3 months', d => dates.addMonths(d, 3)], ['In 6 months', d => dates.addMonths(d, 6)]];
 
 /** выбор даты: готовые варианты + своя дата. Возвращает { el, value() } */
 export function datePicker(initial) {
@@ -26,8 +26,8 @@ export function datePicker(initial) {
 
 export default {
   id: 'later',
-  title: 'Не хочу помнить, но надо',
-  short: 'Потом',
+  title: 'Don’t want to remember, but have to',
+  short: 'Later',
   icon: '⏳',
 
   mount(root) {
@@ -35,11 +35,11 @@ export default {
 
     const picker = datePicker();
     const { el: capture } = composer({
-      placeholder: 'Например: сходить к стоматологу', button: 'Запомнить', multiline: false, extra: picker.el,
+      placeholder: 'e.g. dentist appointment', button: 'Remember', multiline: false, extra: picker.el,
       onSubmit: async text => {
         const date = picker.value();
         await db.save({ type: 'later', text, date, done: false });
-        toast(`Записано на ${dates.short(date)}`);
+        toast(`Saved for ${dates.short(date)}`);
         picker.reset();
       },
     });
@@ -47,7 +47,7 @@ export default {
     const listEl = h('ul.later');
     const doneEl = h('section.done-block');
 
-    root.append(h('header.page-head', null, h('h1', null, 'Не хочу помнить, но надо')), capture, listEl, doneEl);
+    root.append(h('header.page-head', null, h('h1', null, 'Don’t want to remember, but have to')), capture, listEl, doneEl);
 
     function row(l) {
       if (editId === l.id) {
@@ -56,8 +56,8 @@ export default {
         const save = async () => { editId = null; const v = input.value.trim(); if (v) await db.save({ ...l, text: v, date: p.value() }); else render(); };
         queueMicrotask(() => input.focus());
         return h('li.later-item.editing', null, input, p.el, h('div.buttons', null,
-          h('button.btn.primary', { onclick: save }, 'Сохранить'),
-          h('button.btn', { onclick: () => { editId = null; render(); } }, 'Отмена')));
+          h('button.btn.primary', { onclick: save }, 'Save'),
+          h('button.btn', { onclick: () => { editId = null; render(); } }, 'Cancel')));
       }
       const open = openId === l.id, n = dates.daysFrom(l.date);
       return h('li.later-item' + (open ? '.open' : '') + (l.done ? '.done' : ''), null,
@@ -65,16 +65,16 @@ export default {
           h('span.later-date', null, h('b', null, dates.short(l.date)), h('span' + (n < 0 && !l.done ? '.past' : ''), null, dates.relative(l.date))),
           h('span.later-text', null, l.text)),
         open && h('div.buttons', null,
-          h('button.btn', { onclick: () => { openId = null; db.save({ ...l, done: !l.done, doneAt: l.done ? null : Date.now() }); } }, l.done ? 'Вернуть' : 'Сделано'),
-          h('button.btn', { onclick: () => { editId = l.id; openId = null; render(); } }, 'Изменить'),
-          h('button.btn.danger', { onclick: () => { openId = null; removeWithUndo(db, l); } }, 'Удалить')));
+          h('button.btn', { onclick: () => { openId = null; db.save({ ...l, done: !l.done, doneAt: l.done ? null : Date.now() }); } }, l.done ? 'Not done' : 'Done'),
+          h('button.btn', { onclick: () => { editId = l.id; openId = null; render(); } }, 'Edit'),
+          h('button.btn.danger', { onclick: () => { openId = null; removeWithUndo(db, l); } }, 'Delete')));
     }
 
     function render() {
       const open = items.filter(l => !l.done), done = items.filter(l => l.done).sort((a, b) => b.doneAt - a.doneAt);
-      listEl.replaceChildren(...(open.length ? open.map(row) : [h('li.empty', null, 'Можно ни о чём не помнить.')]));
+      listEl.replaceChildren(...(open.length ? open.map(row) : [h('li.empty', null, 'Nothing to remember. Nice.')]));
       doneEl.replaceChildren(...(done.length ? [
-        h('div.done-head', null, h('button.link', { onclick: () => { showDone = !showDone; render(); } }, `${showDone ? '▾' : '▸'} Сделано · ${done.length}`)),
+        h('div.done-head', null, h('button.link', { onclick: () => { showDone = !showDone; render(); } }, `${showDone ? '▾' : '▸'} Done · ${done.length}`)),
         showDone && h('ul.later', null, done.map(row)),
       ].filter(Boolean) : []));
     }

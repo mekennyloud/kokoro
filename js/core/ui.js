@@ -18,7 +18,7 @@ export function h(tag, props, ...kids) {
 
 /** поле «написать и сохранить»: многострочное растёт по мере текста, ⌘/Ctrl+Enter — сохранить
  *  (однострочное — просто Enter). onSubmit(text) может вернуть false, чтобы текст не стирался. */
-export function composer({ placeholder, button = 'Записать', multiline = true, onSubmit, extra = null, className = '' }) {
+export function composer({ placeholder, button = 'Save', multiline = true, onSubmit, extra = null, className = '' }) {
   const grow = () => { if (multiline) { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; } };
   const input = multiline
     ? h('textarea.capture-input', { placeholder, rows: 2, oninput: grow,
@@ -37,9 +37,9 @@ export function composer({ placeholder, button = 'Записать', multiline =
 }
 
 /** кнопка удаления с «Вернуть» во всплывашке */
-export async function removeWithUndo(db, rec, text = 'Удалено') {
+export async function removeWithUndo(db, rec, text = 'Deleted') {
   await db.remove(rec.id);
-  toast(text, { label: 'Вернуть', run: async () => db.save({ ...(await db.get(rec.id)), deleted: false }) });
+  toast(text, { label: 'Undo', run: async () => db.save({ ...(await db.get(rec.id)), deleted: false }) });
 }
 
 let toastTimer;
@@ -53,13 +53,13 @@ export function toast(text, action) {
   toastTimer = setTimeout(() => el.remove(), 5000);
 }
 
-/** «сегодня 14:05», «вчера 09:12», «3 ноя», «3 ноя 2025» */
+/** «today 14:05», «yesterday 09:12», «3 Nov», «3 Nov 2025» */
 export function when(ms) {
   const d = new Date(ms), now = new Date();
-  const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((day(now) - day(d)) / 864e5);
-  if (diff === 0) return 'сегодня ' + time;
-  if (diff === 1) return 'вчера ' + time;
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' }).replace('.', '');
+  if (diff === 0) return 'today ' + time;
+  if (diff === 1) return 'yesterday ' + time;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' }).replace('.', '');
 }

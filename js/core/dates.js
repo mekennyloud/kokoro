@@ -16,26 +16,22 @@ export function addMonths(s, n) {
 /** сколько дней от сегодня (отрицательное — уже прошло) */
 export const daysFrom = s => Math.round((parse(s) - parse(today())) / 864e5);
 
-const plural = (n, one, few, many) => {
-  const a = Math.abs(n) % 100, b = a % 10;
-  return a > 10 && a < 20 ? many : b === 1 ? one : b >= 2 && b <= 4 ? few : many;
-};
-const days = n => `${n} ${plural(n, 'день', 'дня', 'дней')}`;
+const days = n => `${n} ${n === 1 ? 'day' : 'days'}`;
 
-/** «сегодня», «завтра», «через 12 дней», «3 дня назад» */
+/** «today», «tomorrow», «in 12 days», «3 days ago» */
 export function relative(s) {
   const n = daysFrom(s);
-  if (n === 0) return 'сегодня';
-  if (n === 1) return 'завтра';
-  if (n === -1) return 'вчера';
-  return n > 0 ? 'через ' + days(n) : days(-n) + ' назад';
+  if (n === 0) return 'today';
+  if (n === 1) return 'tomorrow';
+  if (n === -1) return 'yesterday';
+  return n > 0 ? 'in ' + days(n) : days(-n) + ' ago';
 }
 
-/** «12 дек», «12 дек 2027», «вторник, 3 ноября» */
+/** «12 Dec», «12 Dec 2027», «Tuesday 3 November» */
 export const short = s => {
   const d = parse(s);
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }).replace('.', '');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
 };
-export const long = s => parse(s).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-export const monthTitle = d => d.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }).replace(' г.', '');
-export const WEEKDAYS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+export const long = s => parse(s).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+export const monthTitle = d => d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+export const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];

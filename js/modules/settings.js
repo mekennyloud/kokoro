@@ -5,25 +5,25 @@ import { h, when } from '../core/ui.js';
 
 export default {
   id: 'settings',
-  title: 'Настройки',
+  title: 'Settings',
   icon: '⚙',
 
   mount(root) {
     const addr = h('input.field', {
-      type: 'url', value: sync.macAddr(), placeholder: 'https://твой-mac.xxxx.ts.net:8443',
+      type: 'url', value: sync.macAddr(), placeholder: 'https://your-mac.xxxx.ts.net:8443',
       autocapitalize: 'off', autocomplete: 'off', spellcheck: false,
       onchange: () => sync.setMacAddr(addr.value),
     });
     const status = h('p.status');
-    const now = h('button.btn', { onclick: () => sync.syncNow() }, 'Синхронизировать сейчас');
+    const now = h('button.btn', { onclick: () => sync.syncNow() }, 'Sync now');
 
     function renderStatus(s) {
       now.disabled = s.busy || !sync.macAddr();
-      status.textContent = !sync.macAddr() ? 'Mac не подключён — всё хранится только на этом устройстве.'
-        : s.busy ? 'Синхронизирую…'
-        : s.error ? `${s.error}. Записи сохранены здесь и уйдут на Mac, когда он будет доступен.`
-        : s.lastOk ? 'Синхронизировано ' + when(s.lastOk)
-        : 'Ещё не синхронизировалось.';
+      status.textContent = !sync.macAddr() ? 'No Mac connected — everything stays on this device.'
+        : s.busy ? 'Syncing…'
+        : s.error ? `${s.error}. Your entries are saved here and will reach the Mac once it is available.`
+        : s.lastOk ? 'Synced ' + when(s.lastOk)
+        : 'Not synced yet.';
       status.classList.toggle('warn', !!s.error && !s.busy);
     }
 
@@ -41,15 +41,15 @@ export default {
     }
 
     root.append(
-      h('header.page-head', null, h('h1', null, 'Настройки')),
+      h('header.page-head', null, h('h1', null, 'Settings')),
       h('section.card', null,
-        h('h2', null, 'Синхронизация с Mac'),
-        h('p.hint', null, 'Адрес Mac в Tailscale. Записи хранятся на устройстве и работают без сети, а когда Mac включён — синхронизируются с ним и с другими устройствами.'),
+        h('h2', null, 'Sync with Mac'),
+        h('p.hint', null, 'Your Mac’s Tailscale address. Entries live on this device and work offline; when the Mac is on, they sync with it and with your other devices.'),
         addr, status, now),
       h('section.card', null,
-        h('h2', null, 'Копия'),
-        h('p.hint', null, 'Все записи одним файлом. Mac и так каждый день сохраняет копию в папку Кокоро/Копии.'),
-        h('button.btn', { onclick: exportAll }, 'Сохранить файл')),
+        h('h2', null, 'Backup'),
+        h('p.hint', null, 'All entries in one file. The Mac also keeps a daily copy in the Кокоро/Копии folder.'),
+        h('button.btn', { onclick: exportAll }, 'Save file')),
     );
     renderStatus(sync.state);
     return sync.onState(renderStatus);

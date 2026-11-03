@@ -225,6 +225,74 @@ h2 { font-size: 17px; margin: 0; }
 .cal-items .done a { color: var(--muted); text-decoration: line-through; }
 .cal-add { display: flex; gap: 8px; }
 
+/* ── Not happy about this ── */
+.btn.small { min-height: 34px; padding: 5px 12px; font-size: 14px; }
+.uneasy-capture { display: grid; gap: 10px; }
+.uneasy-capture .capture-row { margin-top: 0; }
+.cause-picker { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.cause {
+  display: grid; justify-items: center; gap: 2px; padding: 6px 0 4px; border-radius: 12px;
+  border: 1px solid transparent; background: none; color: var(--muted); font-size: 9.5px; letter-spacing: -.03em; min-width: 0;
+}
+.cause-emoji { font-size: 24px; line-height: 1.1; filter: grayscale(1); opacity: .55; transition: transform .15s, filter .15s, opacity .15s; }
+.cause.on { border-color: var(--line); background: var(--bg); color: var(--ink); }
+.cause.on .cause-emoji { filter: none; opacity: 1; transform: rotate(-8deg) scale(1.15); }
+.cause-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.image-preview { position: relative; width: 64px; height: 64px; }
+.image-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.image-remove { position: absolute; top: -10px; right: -10px; width: 26px; height: 26px; font-size: 12px; background: var(--ink); color: var(--bg); }
+
+.uneasy-item { position: relative; }
+.uneasy-item .thought-text { padding-right: 64px; }
+.stickers { position: absolute; top: -10px; right: 8px; display: flex; pointer-events: none; }
+.sticker {
+  font-size: 26px; line-height: 1; padding: 5px; margin-left: -10px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: 0 2px 6px rgb(0 0 0 / .12);
+  transform: rotate(var(--tilt, -8deg));
+}
+.uneasy-list { gap: 16px; padding-top: 6px; }
+.uneasy-image { display: block; border: 0; background: none; padding: 6px 10px 2px; width: 100%; }
+.uneasy-image img { display: block; max-width: 100%; max-height: 360px; border-radius: 12px; }
+.reflect { margin: 6px 10px 2px; padding: 8px 12px; border-left: 3px solid var(--line); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
+.reflect.editing { border: 0; padding: 0; display: grid; gap: 8px; }
+.reflect-input { border: 1px solid var(--line) !important; border-radius: 12px; padding: 10px !important; font-size: 16px; }
+.reflect-label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+
+.letgo-holder { margin: -4px 0 12px; }
+.letgo {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px 6px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 15px;
+}
+.letgo b { font-size: 17px; }
+.letgo-emoji { font-size: 18px; }
+.letgo.bump { animation: bump .6s ease-out; }
+@keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.25) rotate(-4deg); } 100% { transform: scale(1); } }
+
+.letting-go { animation: fly-away .45s ease-in forwards; }
+@keyframes fly-away { to { transform: translateY(-60px) scale(.85) rotate(-3deg); opacity: 0; } }
+
+.celebrate { position: fixed; z-index: 30; left: 50%; top: calc(env(safe-area-inset-top) + 90px); width: 0; height: 0; pointer-events: none; }
+.celebrate-text {
+  position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); white-space: nowrap;
+  padding: 12px 22px; border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+  font-size: 22px; font-weight: 800; animation: pop 1.9s ease-out forwards;
+}
+@keyframes pop {
+  0% { transform: translate(-50%, -50%) scale(.3); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  25%, 75% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -80%) scale(.95); opacity: 0; }
+}
+.spark { position: absolute; left: 0; top: 0; font-size: 22px; transform: translate(-50%, -50%); animation: spark 1.3s ease-out forwards; }
+@keyframes spark {
+  0% { transform: translate(-50%, -50%) scale(.4); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--r)) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-text, .spark, .letgo.bump, .letting-go { animation: none; }
+  .spark { display: none; }
+}
+
 /* ── Настройки ── */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; display: grid; gap: 10px; justify-items: start; max-width: 640px; }
 .card .field { justify-self: stretch; }

@@ -9,14 +9,14 @@ const SOON_DAYS = 7;
 
 export default {
   id: 'home',
-  title: 'Главная',
+  title: 'Home',
   icon: '⌂',
 
   mount(root) {
     let notes = [], soon = [], openId = null, editId = null;
 
     const { el: capture } = composer({
-      placeholder: 'Напиши себе…', button: 'Сказать',
+      placeholder: 'Write to yourself…', button: 'Say it',
       onSubmit: text => db.save({ type: 'note', text }),
     });
     const notesEl = h('div.notes');
@@ -33,21 +33,21 @@ export default {
         const save = async () => { editId = null; const t = ta.value.trim(); if (t && t !== n.text) await db.save({ ...n, text: t }); else render(); };
         queueMicrotask(() => ta.focus());
         return h('div.note.editing', null, ta, h('div.buttons', null,
-          h('button.btn.primary', { onclick: save }, 'Сохранить'),
-          h('button.btn', { onclick: () => { editId = null; render(); } }, 'Отмена')));
+          h('button.btn.primary', { onclick: save }, 'Save'),
+          h('button.btn', { onclick: () => { editId = null; render(); } }, 'Cancel')));
       }
       const open = openId === n.id;
       return h('div.note' + (open ? '.open' : ''), null,
         h('button.note-text', { onclick: () => { openId = open ? null : n.id; render(); } }, n.text),
         open && h('div.buttons', null,
-          h('button.btn', { onclick: () => { editId = n.id; openId = null; render(); } }, 'Изменить'),
-          h('button.btn', { onclick: () => { openId = null; removeWithUndo(db, n, 'Убрано'); } }, 'Убрать')));
+          h('button.btn', { onclick: () => { editId = n.id; openId = null; render(); } }, 'Edit'),
+          h('button.btn', { onclick: () => { openId = null; removeWithUndo(db, n, 'Removed'); } }, 'Remove')));
     }
 
     function render() {
       notesEl.replaceChildren(...notes.map(note));
       soonEl.replaceChildren(...(soon.length ? [
-        h('h2', null, 'Скоро'),
+        h('h2', null, 'Coming up'),
         h('ul.soon-list', null, soon.map(l => h('li', null,
           h('a.soon-item', { href: '#later' },
             h('span', null, l.text),
