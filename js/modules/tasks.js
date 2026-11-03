@@ -1,6 +1,7 @@
 // «To do»: быстрые дела. Записал — отметил — забыл.
 // Вместо сроков — два режима: 🔥 Urgent и 🌿 Can wait. Стикер показывает сферу жизни,
-// к делу можно добавить заметку и картинку.
+// к делу можно добавить заметку и картинку. Сделанное — отдельным видом (⋯ → Done tasks, адрес #tasks?done):
+// удалить дело можно только оттуда, чтобы в основном списке не было лишних крестиков.
 // Записи: task { text, done, doneAt, urgent, causes: [id], note, image: data:…|null }.
 import * as db from '../core/db.js';
 import { h, removeWithUndo, addFlow } from '../core/ui.js';
@@ -27,9 +28,11 @@ export default {
   id: 'tasks',
   title: 'To do',
   icon: 'tasks',
+  menu: [{ label: 'Done tasks', href: '#tasks?done' }],
 
   mount(root) {
-    let tasks = [], showDone = false, editId = null;
+    let tasks = [], editId = null;
+    const doneView = location.hash.endsWith('?done');
 
     // ── новое дело ──
     let draft;
@@ -53,9 +56,9 @@ export default {
     }
 
     const listEl = h('div.task-groups');
-    const doneEl = h('section.done-block');
     const flow = addFlow(capture, input, 'New task');
-    root.append(h('header.page-head', null, h('h1', null, 'To do')), capture, flow.fab, listEl, doneEl);
+    if (doneView) root.append(h('header.page-head.with-back', null, h('a.back', { href: '#tasks' }, '← To do'), h('h1', null, 'Done')), listEl);
+    else root.append(h('header.page-head', null, h('h1', null, 'To do')), capture, flow.fab, listEl);
 
     const toggle = t => db.save({ ...t, done: !t.done, doneAt: t.done ? null : Date.now() });
 
@@ -83,22 +86,20 @@ export default {
           h('span.task-text', null, t.text),
           t.note && h('span.task-note', null, t.note),
           t.image && h('img.task-image', { src: t.image, alt: '' })),
-        h('button.icon-btn', { onclick: () => removeWithUndo(db, t), 'aria-label': 'Delete' }, '✕'));
+        t.done && h('button.icon-btn', { onclick: () => removeWithUndo(db, t), 'aria-label': 'Delete' }, '✕'));
     }
 
     function render() {
-      const open = tasks.filter(t => !t.done), done = tasks.filter(t => t.done).sort((a, b) => b.doneAt - a.doneAt);
+      if (doneView) {
+        const done = tasks.filter(t => t.done).sort((a, b) => b.doneAt - a.doneAt);
+        return listEl.replaceChildren(done.length ? h('ul.tasks', null, done.map(row)) : h('p.empty', null, 'Nothing done yet — that’s fine.'));
+      }
+      const open = tasks.filter(t => !t.done);
       const urgent = open.filter(t => t.urgent), wait = open.filter(t => !t.urgent);
       const group = (title, list) => h('section.task-group', null, title && h('h2.task-group-title', null, title), h('ul.tasks', null, list.map(row)));
       listEl.replaceChildren(...(!open.length ? [h('p.empty', null, 'Nothing to do. Enjoy.')]
         : urgent.length ? [group('🔥 Urgent', urgent), wait.length && group('🌿 Can wait', wait)].filter(Boolean)
         : [group(null, wait)]));
-      doneEl.replaceChildren(...(done.length ? [
-        h('div.done-head', null,
-          h('button.link', { onclick: () => { showDone = !showDone; render(); } }, `${showDone ? '▾' : '▸'} Done · ${done.length}`),
-          showDone && h('button.link', { onclick: async () => { for (const t of done) await db.remove(t.id); } }, 'Clear')),
-        showDone && h('ul.tasks', null, done.map(row)),
-      ].filter(Boolean) : []));
     }
 
     async function load() {

@@ -6,6 +6,19 @@ import * as db from '../core/db.js';
 import { h, removeWithUndo, when, addFlow } from '../core/ui.js';
 import { causePicker, imageField, stickers } from '../core/bits.js';
 
+// радостный кот для счётчика «Let go»: прыгает «happy-happy-happy»; свою гифку можно положить в слот uneasy-letgo
+const CAT = `<svg viewBox="0 0 80 80" aria-hidden="true"><g class="cat">
+  <path class="tail" d="M57 63c13-2 15-12 11-20" fill="none" stroke="#141210" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="40" cy="62" rx="17" ry="12" fill="#fff6e0" stroke="#141210" stroke-width="3"/>
+  <ellipse class="paw l" cx="19" cy="44" rx="5" ry="6.5" fill="#fff6e0" stroke="#141210" stroke-width="3"/>
+  <ellipse class="paw r" cx="61" cy="44" rx="5" ry="6.5" fill="#fff6e0" stroke="#141210" stroke-width="3"/>
+  <path d="M18 35 20 11l11 10q9-3 18 0l11-10 2 24q0 16-22 16T18 35z" fill="#fff6e0" stroke="#141210" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m22.5 16.5 1 8 6-3zm35 0-1 8-6-3z" fill="#f6a0b8"/>
+  <path d="M26 34q4-6 8 0m12 0q4-6 8 0" fill="none" stroke="#141210" stroke-width="3" stroke-linecap="round"/>
+  <path d="M35 39q5 8 10 0z" fill="#f0461f" stroke="#141210" stroke-width="2.4" stroke-linejoin="round"/>
+  <ellipse cx="23.5" cy="40.5" rx="3.6" ry="2.1" fill="#f6a0b8"/><ellipse cx="56.5" cy="40.5" rx="3.6" ry="2.1" fill="#f6a0b8"/>
+</g></svg>`;
+
 const PRAISE = ['Well done!', 'Nice, let it go!', 'Proud of you!', 'Gone. Breathe out.', 'That’s the spirit!', 'Lighter already!'];
 const SPARKS = ['✨', '🎉', '💫', '🌟', '🫧', '💖'];
 
@@ -28,7 +41,7 @@ export default {
   icon: 'unhappy',
 
   mount(root) {
-    let items = [], openId = null, editId = null, reflectId = null, showReleased = false, bump = false;
+    let items = [], openId = null, editId = null, reflectId = null, showReleased = false, bump = false, catGif = null;
 
     // ── новая запись ──
     const draft = { causes: new Set(), image: null };
@@ -122,8 +135,13 @@ export default {
 
     function render() {
       const open = items.filter(u => !u.released), rel = items.filter(u => u.released).sort((a, b) => b.releasedAt - a.releasedAt);
-      counterEl.replaceChildren(...(rel.length ? [h('button.letgo' + (bump ? '.bump' : ''), { onclick: () => { showReleased = !showReleased; render(); }, 'aria-expanded': showReleased ? 'true' : 'false' },
-        h('span.letgo-emoji', { 'aria-hidden': 'true' }, '🎈'), 'Already let go: ', h('b', null, String(rel.length)))] : []));
+      const cat = h('span.letgo-cat');
+      if (catGif) cat.append(h('img', { src: catGif, alt: '' })); else cat.innerHTML = CAT;
+      counterEl.replaceChildren(h('button.letgo' + (bump ? '.party' : ''), {
+        onclick: () => { showReleased = !showReleased; render(); }, 'aria-expanded': showReleased ? 'true' : 'false',
+        'aria-label': `Already let go: ${rel.length}. Show what you let go`,
+      }, cat, h('span.letgo-text', null, h('small', null, 'Already let go'), h('b', null, String(rel.length)),
+        h('small.letgo-happy', null, rel.length ? 'happy · happy · happy' : 'waiting to be happy'))));
       bump = false;
       listEl.replaceChildren(...(open.length ? open.map(row) : [h('li.empty', null, 'Nothing bothering you right now. Nice.')]));
       relEl.replaceChildren(...(showReleased && rel.length ? [h('h2', null, 'Let go'), h('ul.thoughts.uneasy-list', null, rel.map(row))] : []));
@@ -131,6 +149,8 @@ export default {
 
     async function load() {
       items = (await db.list('uneasy')).sort((a, b) => b.created - a.created);
+      const art = await db.get('art-uneasy-letgo');
+      catGif = art && !art.deleted ? art.image : null;
       if (!editId && !reflectId) render();
     }
 

@@ -7,7 +7,8 @@
                                                   его делает tools/cutout.swift)
     python3 tools/art.py <слот> --clear        — убрать картинку из слота
 
-Картинка уменьшается до 560 px по длинной стороне. Слоты главной: home-cycle, home-manicure, home-zumba, home-exam.
+Картинка уменьшается до 560 px по длинной стороне. Слоты: home-cycle, home-manicure, home-zumba, home-exam, uneasy-letgo.
+GIF до 1,5 МБ кладётся как есть — остаётся живой.
 """
 import base64
 import json
@@ -26,6 +27,7 @@ SLOTS = {
     "home-manicure": "главная · маникюр (печать на жёлтом)",
     "home-zumba": "главная · зумба (стикер)",
     "home-exam": "главная · сессия (печать на красном)",
+    "uneasy-letgo": "Not happy · счётчик Let go (можно GIF)",
 }
 MAX = 560
 
@@ -57,6 +59,9 @@ def put(slot, image):
 
 def encode(path):
     src = Path(path)
+    if src.suffix.lower() == ".gif" and src.stat().st_size <= 1_500_000:   # живая гифка — как есть, без пересжатия
+        data = src.read_bytes()
+        return "data:image/gif;base64," + base64.b64encode(data).decode(), len(data)
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / (src.stem + ".png")
         subprocess.run(["sips", "-s", "format", "png", "-Z", str(MAX), str(src), "--out", str(out)],

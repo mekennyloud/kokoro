@@ -10,7 +10,8 @@ export function applyTheme(t = pref('theme', 'light')) {
   document.documentElement.dataset.theme = t;
 }
 
-export function setupMenu(button) {
+/** sectionItems() — пункты открытого раздела: [{ label, href }], они идут первыми */
+export function setupMenu(button, sectionItems = () => []) {
   let panel = null;
 
   function close() {
@@ -29,6 +30,7 @@ export function setupMenu(button) {
           h('button.chip.small' + (theme === id ? '.on' : ''), {
             onclick: () => { setPref('theme', id); applyTheme(id); close(); open(); },
           }, name)))),
+      ...sectionItems().map(it => h('a.menu-item.section-item', { href: it.href, onclick: close }, it.label)),
       h('a.menu-item', { href: '#calendar', onclick: close }, 'Calendar'),
       h('a.menu-item', { href: '#settings', onclick: close }, 'Sync & backup',
         sync.isStale() && h('span.menu-warn', null, ' · not synced for a while')),

@@ -10,8 +10,9 @@ const main = document.getElementById('main');
 const nav = document.getElementById('nav');
 let unmount = null;
 
+// адрес вида #tasks или #tasks?done — после «?» вид внутри раздела
 function current() {
-  const id = location.hash.slice(1);
+  const id = location.hash.slice(1).split('?')[0];
   return all.find(m => m.id === id) || sections[0];
 }
 
@@ -35,7 +36,7 @@ function show() {
 
 addEventListener('hashchange', show);
 applyTheme();
-setupMenu(document.getElementById('menu-btn'));
+setupMenu(document.getElementById('menu-btn'), () => current().menu || []);
 show();
 startAutoSync();
 

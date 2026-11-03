@@ -1,6 +1,6 @@
 // Кэширует само приложение, чтобы оно открывалось без интернета.
 // При обновлении приложения увеличь номер версии.
-const CACHE = 'kokoro-v11';
+const CACHE = 'kokoro-v12';
 const FONTS = 'kokoro-fonts';   // шрифты Google — живут между версиями приложения
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'css/base.css',
   'js/app.js', 'js/core/db.js', 'js/core/prefs.js', 'js/core/sync.js', 'js/core/ui.js', 'js/core/dates.js', 'js/core/menu.js', 'js/core/images.js', 'js/core/bits.js', 'js/core/icons.js',
