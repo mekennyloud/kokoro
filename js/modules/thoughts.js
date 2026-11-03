@@ -1,8 +1,10 @@
-// Раздел «Мысли»: быстро записать, что крутится в голове, а потом, когда захочется, разложить по полкам.
-// Записи: thought { text, shelf: id|null, done, doneAt } и shelf { name, order }.
+// Раздел «Мысли»: быстро записать, что крутится в голове (с заметкой, если нужно), а потом, когда захочется,
+// разложить по полкам. Открывается всегда на «All»; полки спрятаны в фильтр — ими пользуются нечасто.
+// Записи: thought { text, note, shelf: id|null, done, doneAt } и shelf { name, order }.
 import * as db from '../core/db.js';
 import { pref, setPref } from '../core/prefs.js';
 import { h, toast, when, addFlow } from '../core/ui.js';
+import { noteField } from '../core/bits.js';
 
 const INBOX = 'inbox', ALL = 'all', DONE = 'done';
 
@@ -10,7 +12,6 @@ const INBOX = 'inbox', ALL = 'all', DONE = 'done';
 const DEFAULT_SHELVES = [
   { id: 'shelf-forget', name: 'Don’t forget' },
   { id: 'shelf-work', name: 'Work' },
-  { id: 'shelf-sport', name: 'Sport' },
   { id: 'shelf-ideas', name: 'Ideas' },
 ];
 
@@ -33,15 +34,23 @@ async function translateShelves() {
   }
 }
 
+// полку «Sport» по умолчанию убрали: если её не переименовывали — удаляем, мысли с неё уходят во «Входящие»
+async function dropSport() {
+  const r = await db.get('shelf-sport');
+  if (!r || r.deleted || !['Sport', 'Спорт'].includes(r.name)) return;
+  for (const t of (await db.list('thought')).filter(t => t.shelf === r.id)) await db.save({ ...t, shelf: null });
+  await db.remove(r.id);
+}
+
 export default {
   id: 'thoughts',
   title: 'Thoughts',
   icon: 'thoughts',
 
   mount(root) {
-    let view = pref('thoughts:view', INBOX);
+    let view = ALL;
     let query = '';
-    let openId = null, editId = null, addingShelf = false, renamingShelf = false;
+    let openId = null, editId = null, addingShelf = false, renamingShelf = false, filterOpen = false;
     let shelves = [], thoughts = [];
 
     const shelfName = id => shelves.find(s => s.id === id)?.name;
@@ -57,14 +66,19 @@ export default {
       onkeydown: e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); add(); } },
     });
     const capWhere = h('span.capture-where');
+    let draft = { note: '' };
+    const noteHolder = h('div');
+    const resetNote = () => { draft = { note: '' }; noteHolder.replaceChildren(noteField(draft)); };
+    resetNote();
     const capture = h('form.capture', { onsubmit: e => { e.preventDefault(); add(); } },
-      cap, h('div.capture-row', null, capWhere, h('button.btn.primary', { type: 'submit' }, 'Save')));
+      cap, noteHolder, h('div.capture-row', null, capWhere, h('button.btn.primary', { type: 'submit' }, 'Save')));
 
     async function add() {
       const text = cap.value.trim();
       if (!text) return cap.focus();
       cap.value = ''; cap.style.height = '';
-      await db.save({ type: 'thought', text, shelf: target(), done: false });
+      await db.save({ type: 'thought', text, note: draft.note.trim(), shelf: target(), done: false });
+      resetNote();
       flow.close();
     }
 
@@ -74,7 +88,9 @@ export default {
       oninput: () => { query = search.value.trim().toLowerCase(); renderList(); },
     });
 
-    const shelvesEl = h('nav.shelves', { 'aria-label': 'Shelves' });
+    // ── фильтр: полки спрятаны за кнопкой ──
+    const filterBtn = h('button.filter-btn', { type: 'button', 'aria-haspopup': 'true', onclick: () => { filterOpen = !filterOpen; renderShelves(); } });
+    const shelvesEl = h('nav.shelves.filter-panel', { 'aria-label': 'Shelves' });
     const headEl = h('div.list-head');
     const listEl = h('ul.thoughts');
 
@@ -82,17 +98,23 @@ export default {
     root.append(
       h('header.page-head', null, h('h1', null, 'Thoughts')),
       capture, flow.fab,
-      h('div.thoughts-layout', null, shelvesEl, h('section.thoughts-main', null, search, headEl, listEl)),
+      h('div.thoughts-tools', null, filterBtn, search),
+      shelvesEl,
+      h('section.thoughts-main', null, headEl, listEl),
     );
 
     function go(v) {
-      view = v; setPref('thoughts:view', v);
-      openId = editId = null; renamingShelf = false;
+      view = v;
+      openId = editId = null; renamingShelf = false; filterOpen = false;
       render();
     }
 
     // ── полки ──
     function renderShelves() {
+      filterBtn.replaceChildren(h('span', null, 'Filter'), h('b', null, viewName()), h('span', { 'aria-hidden': 'true' }, filterOpen ? '▴' : '▾'));
+      filterBtn.setAttribute('aria-expanded', filterOpen ? 'true' : 'false');
+      filterBtn.classList.toggle('on', view !== ALL);
+      shelvesEl.hidden = !filterOpen;
       const chip = (id, name, cls = '') =>
         h('button.chip' + cls + (view === id ? '.on' : ''), { onclick: () => go(id), 'aria-current': view === id ? 'true' : null }, name);
       const adder = addingShelf
@@ -101,12 +123,11 @@ export default {
               onblur: e => { if (!e.target.value.trim()) { addingShelf = false; renderShelves(); } } }))
         : h('button.chip.ghost', { onclick: () => { addingShelf = true; renderShelves(); shelvesEl.querySelector('input').focus(); } }, '+ shelf');
       shelvesEl.replaceChildren(
+        chip(ALL, 'All'),
         chip(INBOX, 'Inbox'),
         ...shelves.map(s => chip(s.id, s.name)),
-        adder,
-        h('span.shelves-gap'),
-        chip(ALL, 'All', '.quiet'),
         chip(DONE, 'Done', '.quiet'),
+        adder,
       );
     }
 
@@ -148,6 +169,7 @@ export default {
         headEl.replaceChildren(h('form', { onsubmit: e => { e.preventDefault(); commit(); } }, input));
         return input.focus();
       }
+      if (view === ALL) return headEl.replaceChildren();   // «All» и так написано на фильтре
       headEl.replaceChildren(
         h('h2', null, viewName()),
         ...(isShelf ? [h('div.head-tools', null,
@@ -180,6 +202,7 @@ export default {
       if (editId === t.id) return editor(t);
       return h('li.thought' + (open ? '.open' : '') + (t.done ? '.done' : ''), { dataset: { id: t.id } },
         h('button.thought-text', { onclick: () => { openId = open ? null : t.id; renderList(); }, 'aria-expanded': open }, t.text),
+        t.note && h('div.thought-note', null, t.note),
         h('div.thought-meta', null,
           h('span', null, when(t.created)),
           showShelf && h('span.tag', null, shelfName(inShelf(t)) || 'Inbox')),
@@ -195,6 +218,7 @@ export default {
     }
 
     function editor(t) {
+      const state = { note: t.note || '' };
       const ta = h('textarea.edit-input', {
         value: t.text, rows: Math.min(10, t.text.split('\n').length + 1),
         onkeydown: e => {
@@ -205,9 +229,10 @@ export default {
       const done = async () => {
         const text = ta.value.trim();
         editId = null;
-        if (text && text !== t.text) await db.save({ ...t, text }); else renderList();
+        if (text && (text !== t.text || state.note.trim() !== (t.note || ''))) await db.save({ ...t, text, note: state.note.trim() });
+        else renderList();
       };
-      const li = h('li.thought.editing', null, ta, h('div.buttons', null,
+      const li = h('li.thought.editing', null, ta, noteField(state), h('div.buttons', null,
         h('button.btn.primary', { onclick: done }, 'Save'),
         h('button.btn', { onclick: () => { editId = null; renderList(); } }, 'Cancel')));
       queueMicrotask(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); });
@@ -248,7 +273,7 @@ export default {
     }
 
     const off = db.onChange(load);
-    seedShelves().then(translateShelves).then(load);
+    seedShelves().then(translateShelves).then(dropSport).then(load);
     return off;
   },
 };

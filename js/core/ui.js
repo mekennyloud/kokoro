@@ -36,12 +36,20 @@ export function composer({ placeholder, button = 'Save', multiline = true, onSub
   return { el, input };
 }
 
+/** «+» рисуем линиями, а не символом шрифта — так он точно по центру круга */
+export function plusIcon() {
+  const el = document.createElement('span');
+  el.className = 'plus-icon';
+  el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>';
+  return el;
+}
+
 /** форма добавления прячется за круглой кнопкой «+» внизу справа: на экране меньше шума.
  *  Возвращает { fab, open, close }; fab нужно добавить на страницу, close — вызвать после сохранения. */
 export function addFlow(form, focusEl, label = 'Add') {
   form.hidden = true;
   form.classList.add('add-form');
-  const fab = h('button.fab', { type: 'button', 'aria-label': label, 'aria-expanded': 'false', onclick: () => (form.hidden ? open() : close()) }, '+');
+  const fab = h('button.fab', { type: 'button', 'aria-label': label, 'aria-expanded': 'false', onclick: () => (form.hidden ? open() : close()) }, plusIcon());
   function open() {
     form.hidden = false;
     fab.classList.add('on'); fab.setAttribute('aria-expanded', 'true');

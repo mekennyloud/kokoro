@@ -37,3 +37,16 @@ export function imageField(state, onChange = () => {}) {
   render();
   return el;
 }
+
+/** заметка: кнопка «📝 Note» раскрывает поле; state.note меняется на месте */
+export function noteField(state) {
+  const el = h('div.note-field');
+  let open = !!state.note;
+  const render = () => {
+    if (!open) return el.replaceChildren(h('button.btn.small', { type: 'button', onclick: () => { open = true; render(); el.querySelector('textarea').focus(); } }, '📝 Note'));
+    const ta = h('textarea.task-note-input', { value: state.note || '', rows: 3, placeholder: 'Details, links, anything…', oninput: () => { state.note = ta.value; } });
+    el.replaceChildren(ta);
+  };
+  render();
+  return el;
+}

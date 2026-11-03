@@ -39,6 +39,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* иначе display: grid/flex у формы перебивает hidden */
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
@@ -498,3 +499,31 @@ h2 { font: 400 16px/1.15 var(--display); text-transform: uppercase; letter-spaci
 .nav-icon .fill { fill: none; }
 .nav-item.on .nav-icon .fill { fill: var(--red); }
 .nav-item.on .nav-icon svg { stroke: var(--black); }
+
+/* «+» по центру круга */
+.fab { display: grid; place-items: center; padding: 0; }
+.plus-icon { display: grid; place-items: center; width: 26px; height: 26px; }
+.plus-icon svg { width: 100%; height: 100%; display: block; }
+
+/* нижнее меню — только иконки */
+.nav-item { padding: 9px 0; justify-content: center; }
+.nav-icon { height: 26px; }
+.nav-icon svg { width: 26px; height: 26px; }
+@media (min-width: 600px) { .nav-item { min-width: 64px; padding: 9px 12px; } }
+
+/* Thoughts: фильтр вместо ленты полок */
+.thoughts-tools { display: flex; gap: 8px; margin-bottom: 10px; }
+.thoughts-tools .search { flex: 1; min-width: 0; }
+.filter-btn { flex: none; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px;
+  border: 1.5px solid var(--soft); border-radius: var(--radius); background: var(--surface); color: var(--ink); }
+.filter-btn span:first-child { font: 700 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.filter-btn b { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-btn.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.filter-btn.on span:first-child { color: inherit; opacity: .7; }
+.shelves.filter-panel { display: flex; flex-wrap: wrap; flex-direction: row; gap: 6px; overflow: visible; position: static;
+  margin: 0 0 12px; padding: 10px; background: var(--surface); border-radius: var(--radius); animation: drop-in .15s ease-out; }
+.thoughts-main { display: grid; gap: 10px; }
+.thought-note { padding: 2px 10px 0; color: var(--muted); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.thought.open .thought-note { -webkit-line-clamp: unset; display: block; }
+.list-head:empty { display: none; }

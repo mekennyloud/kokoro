@@ -4,7 +4,7 @@
 // Записи: task { text, done, doneAt, urgent, causes: [id], note, image: data:…|null }.
 import * as db from '../core/db.js';
 import { h, removeWithUndo, addFlow } from '../core/ui.js';
-import { causePicker, imageField, stickers } from '../core/bits.js';
+import { causePicker, imageField, stickers, noteField } from '../core/bits.js';
 
 /** переключатель «срочно / подождёт»; state.urgent меняется на месте */
 function urgencyToggle(state) {
@@ -13,19 +13,6 @@ function urgencyToggle(state) {
     ...[[true, '🔥 Urgent'], [false, '🌿 Can wait']].map(([v, name]) =>
       h('button.chip.small' + (state.urgent === v ? '.on' : ''), { type: 'button', 'aria-pressed': state.urgent === v ? 'true' : 'false',
         onclick: () => { state.urgent = v; render(); } }, name)));
-  render();
-  return el;
-}
-
-/** заметка: кнопка «📝 Note» раскрывает поле; state.note меняется на месте */
-function noteField(state) {
-  const el = h('div.note-field');
-  let open = !!state.note;
-  const render = () => {
-    if (!open) return el.replaceChildren(h('button.btn.small', { type: 'button', onclick: () => { open = true; render(); el.querySelector('textarea').focus(); } }, '📝 Note'));
-    const ta = h('textarea.task-note-input', { value: state.note || '', rows: 3, placeholder: 'Details, links, anything…', oninput: () => { state.note = ta.value; } });
-    el.replaceChildren(ta);
-  };
   render();
   return el;
 }

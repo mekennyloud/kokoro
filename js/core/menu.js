@@ -1,4 +1,4 @@
-// Меню «⋯» в правом верхнем углу: всё служебное (тема, синхронизация, копия) — здесь, а не на экранах разделов.
+// Меню «⋯» в правом верхнем углу: тема, календарь, синхронизация и копия — то, что нужно не каждый день.
 import { pref, setPref } from './prefs.js';
 import * as sync from './sync.js';
 import { h } from './ui.js';
@@ -29,6 +29,7 @@ export function setupMenu(button) {
           h('button.chip.small' + (theme === id ? '.on' : ''), {
             onclick: () => { setPref('theme', id); applyTheme(id); close(); open(); },
           }, name)))),
+      h('a.menu-item', { href: '#calendar', onclick: close }, 'Calendar'),
       h('a.menu-item', { href: '#settings', onclick: close }, 'Sync & backup',
         sync.isStale() && h('span.menu-warn', null, ' · not synced for a while')),
     );

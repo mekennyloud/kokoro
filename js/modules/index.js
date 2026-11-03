@@ -8,8 +8,8 @@ import calendar from './calendar.js';
 import uneasy from './uneasy.js';
 import settings from './settings.js';
 
-/** разделы в навигации, по порядку; первый открывается при запуске */
-export const sections = [home, thoughts, tasks, later, calendar, uneasy];
+/** разделы в нижнем меню, по порядку; первый открывается при запуске */
+export const sections = [home, thoughts, tasks, uneasy, later];
 
-/** служебные экраны: открываются из меню «⋯», в навигации их нет */
-export const extras = [settings];
+/** открываются из меню «⋯», в нижнем меню их нет */
+export const extras = [calendar, settings];

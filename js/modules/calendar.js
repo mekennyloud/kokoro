@@ -5,7 +5,7 @@
 import * as db from '../core/db.js';
 import * as dates from '../core/dates.js';
 import { pref, setPref } from '../core/prefs.js';
-import { h, removeWithUndo } from '../core/ui.js';
+import { h, removeWithUndo, plusIcon } from '../core/ui.js';
 
 const RANGES = [['day', 'This day'], ['week', 'This week'], ['month', 'This month'], ['next', 'Next month'], ['all', 'All plans']];
 
@@ -45,7 +45,7 @@ export default {
       adding = !adding;
       renderDay();
       if (adding) { const i = dayEl.querySelector('input'); i.focus({ preventScroll: true }); dayEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-    } }, '+');
+    } }, plusIcon());
 
     root.append(
       h('header.page-head', null, h('h1', null, 'Calendar')),

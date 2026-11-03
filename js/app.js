@@ -16,9 +16,10 @@ function current() {
 }
 
 function renderNav(active) {
+  // только иконки; название — для экранного диктора и подсказки
   nav.replaceChildren(...sections.map(m =>
-    h('a.nav-item' + (m === active ? '.on' : ''), { href: '#' + m.id, 'aria-current': m === active ? 'page' : null },
-      icon(m.icon), h('span.nav-label', null, m.short || m.title))));
+    h('a.nav-item' + (m === active ? '.on' : ''), { href: '#' + m.id, 'aria-current': m === active ? 'page' : null, 'aria-label': m.title, title: m.title },
+      icon(m.icon))));
   nav.hidden = sections.length < 2;
 }
 
