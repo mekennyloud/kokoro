@@ -27,9 +27,13 @@ const emit = () => listeners.forEach(fn => fn(state));
 
 const strip = ({ _dirty, ...r }) => r;
 
-let running = null;
+let running = null, again = false;
 export function syncNow() {
-  running ??= run().finally(() => { running = null; });
+  if (running) { again = true; return running; }   // правка во время синхронизации — сразу ещё один круг после неё
+  running = run().finally(() => {
+    running = null;
+    if (again) { again = false; syncSoon(300); }
+  });
   return running;
 }
 
