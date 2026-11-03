@@ -3,12 +3,19 @@
 # а Tailscale отдаёт его твоим устройствам по адресу https://<mac>.<сеть>.ts.net:8443
 # (порт 8443 — чтобы не мешать Медиатеке на обычном 443).
 # Выключить: zsh server/install.sh off
+# Показать ключ для настроек приложения: zsh server/install.sh key
 set -e
 cd "${0:A:h}"
 TS=$(command -v tailscale || echo /Applications/Tailscale.app/Contents/MacOS/Tailscale)
 LABEL=me.kokoro.server
 PLIST=~/Library/LaunchAgents/$LABEL.plist
 PY=$(command -v python3)
+
+if [[ "$1" == key ]]; then
+  echo "Ключ для настроек Kokoro (⋯ → Sync & backup → Key):"
+  cat ~/Кокоро/key; echo
+  exit
+fi
 
 if [[ "$1" == off ]]; then
   launchctl bootout gui/$(id -u)/$LABEL 2>/dev/null || true
@@ -41,3 +48,5 @@ launchctl bootstrap gui/$(id -u) $PLIST
 ADDR=$("$TS" status --json | /usr/bin/python3 -c 'import sys,json; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))')
 echo "Сервер Kokoro работает в фоне."
 echo "Адрес для настроек приложения: https://$ADDR:8443"
+sleep 1
+echo "Ключ: $(cat ~/Кокоро/key 2>/dev/null)"

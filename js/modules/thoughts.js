@@ -19,7 +19,8 @@ async function seedShelves() {
   setPref('thoughts:seeded', true);
   const have = new Set((await db.allRaw()).map(r => r.id));
   for (const [i, s] of DEFAULT_SHELVES.entries())
-    if (!have.has(s.id)) await db.save({ ...s, type: 'shelf', order: i, updated: 1 });
+    // «по умолчанию»: если на Mac эта полка уже переименована или удалена, победит версия с Mac
+    if (!have.has(s.id)) await db.save({ ...s, type: 'shelf', order: i }, { asDefault: true });
 }
 
 // интерфейс стал английским: полки по умолчанию со старыми русскими названиями переименовываем,

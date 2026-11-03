@@ -52,6 +52,8 @@ h2 { font-size: 17px; margin: 0; }
   border: 0; background: none; color: var(--ink); font-size: 24px; line-height: 1;
 }
 .menu-btn:hover, .menu-btn[aria-expanded="true"] { background: var(--line); }
+.menu-btn.stale::after { content: ""; position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+.menu-warn { color: var(--danger); font-size: 14px; }
 .menu {
   position: absolute; z-index: 20; top: calc(env(safe-area-inset-top) + 60px); right: calc(env(safe-area-inset-right) + var(--gutter));
   width: min(320px, calc(100vw - 2 * var(--gutter))); padding: 8px;

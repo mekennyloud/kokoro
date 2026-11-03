@@ -1,18 +1,26 @@
 // Синхронизация с Mac. Всё работает и без неё: записи живут на устройстве,
 // а когда Mac доступен — уходят туда и забирают изменения с других устройств.
 // Запускается сама: при открытии, после правок (с паузой), при возврате в приложение и раз в минуту.
+// Большие объёмы (картинки) идут порциями: отправляем по ~3 МБ, Mac отдаёт по ~4 МБ.
 import * as db from './db.js';
 import { pref, setPref } from './prefs.js';
 
+const CHUNK = 3 * 1024 * 1024;
+const TIMEOUT = 60000;
+export const STALE_AFTER = 24 * 3600 * 1000;   // дольше без синхронизации — показываем точку на «⋯»
+
 export const macAddr = () => (pref('macAddr', '') || '').trim().replace(/\/+$/, '');
+export const macKey = () => (pref('macKey', '') || '').trim();
 export function setMacAddr(v) {
   setPref('macAddr', v.trim());
   setPref('cursor', 0);   // новый Mac — забираем с него всё заново
   syncSoon(0);
 }
+export function setMacKey(v) { setPref('macKey', v.trim()); syncSoon(0); }
 
-/** состояние для экрана настроек */
+/** состояние для экрана настроек и точки на «⋯» */
 export const state = { busy: false, lastOk: pref('lastSync', 0), error: '' };
+export const isStale = () => !!macAddr() && Date.now() - (state.lastOk || 0) > STALE_AFTER;
 const listeners = new Set();
 export const onState = fn => (listeners.add(fn), () => listeners.delete(fn));
 const emit = () => listeners.forEach(fn => fn(state));
@@ -25,41 +33,62 @@ export function syncNow() {
   return running;
 }
 
+/** первые записи до ~CHUNK байт (хотя бы одна) */
+function takeChunk(dirty) {
+  const out = [];
+  let size = 0;
+  for (const r of dirty) {
+    const n = JSON.stringify(r).length;
+    if (out.length && size + n > CHUNK) break;
+    out.push(r); size += n;
+  }
+  return out;
+}
+
+async function request(addr, body) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), TIMEOUT);
+  try {
+    const res = await fetch(addr + '/api/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + macKey() },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal: ctl.signal,
+    });
+    if (res.status === 401) throw new Error('The Mac needs the key — add it in Sync & backup');
+    if (!res.ok) throw new Error('Mac replied ' + res.status);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function run() {
   const addr = macAddr();
   if (!addr || !navigator.onLine) return;
   state.busy = true; emit();
   try {
-    const sent = (await db.allRaw()).filter(r => r._dirty);
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 15000);
-    const res = await fetch(addr + '/api/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ since: pref('cursor', 0), changes: sent.map(strip) }),
-      cache: 'no-store',
-      signal: ctl.signal,
-    }).finally(() => clearTimeout(timer));
-    if (!res.ok) throw new Error('Mac replied ' + res.status);
-    const { cursor, changes } = await res.json();
+    // отправляем порциями, пока есть что отправлять и пока Mac отдаёт изменения
+    for (let round = 0; round < 200; round++) {
+      const dirty = (await db.allRaw()).filter(r => r._dirty);
+      const sent = takeChunk(dirty).map(strip);
+      const res = await request(addr, { since: pref('cursor', 0), changes: sent });
 
-    // отправленное больше не «грязное» — если его не успели поменять, пока шёл запрос
-    const local = new Map((await db.allRaw()).map(r => [r.id, r]));
-    const clean = [];
-    for (const r of sent) {
-      const cur = local.get(r.id);
-      if (cur && cur.updated === r.updated) { const c = { ...cur }; delete c._dirty; clean.push(c); local.set(r.id, c); }
+      // база на Mac новая для этого устройства (первое знакомство, база пропала или восстановлена из копии) —
+      // один раз полностью сверяемся: отправляем всё своё и забираем всё с Mac. Mac оставит то, что новее.
+      const known = pref('dbId', null);
+      if (res.db && res.db !== known) {
+        setPref('dbId', res.db);
+        setPref('cursor', 0);
+        await db.markAllDirty();
+        continue;
+      }
+
+      await db.applySync(sent, res.changes);
+      setPref('cursor', res.cursor);
+      if (!res.more && sent.length >= dirty.length) break;
     }
-    // пришедшее с Mac: берём, если у нас нет неотправленной правки новее
-    const incoming = changes.filter(r => {
-      const cur = local.get(r.id);
-      return !cur || !cur._dirty || r.updated >= cur.updated;
-    });
-    await db.putMany(clean, { silent: true });
-    await db.putMany(incoming, { silent: true });
-    if (incoming.length) db.notify();
-
-    setPref('cursor', cursor);
     state.lastOk = Date.now(); setPref('lastSync', state.lastOk);
     state.error = '';
   } catch (e) {

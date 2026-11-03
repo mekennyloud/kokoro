@@ -42,10 +42,11 @@ export async function list(type) {
 
 export const uid = () => crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-/** создать или изменить запись: сама ставит updated и помечает к отправке */
-export async function save(rec) {
+/** создать или изменить запись: сама ставит updated и помечает к отправке.
+ *  asDefault — запись «по умолчанию» (updated = 1): любая настоящая версия с Mac её перекроет */
+export async function save(rec, { asDefault = false } = {}) {
   const now = Date.now();
-  const r = { created: now, ...rec, id: rec.id || uid(), updated: Math.max(now, (rec.updated || 0) + 1), _dirty: 1 };
+  const r = { created: now, ...rec, id: rec.id || uid(), updated: asDefault ? 1 : Math.max(now, (rec.updated || 0) + 1), _dirty: 1 };
   await tx('readwrite', s => s.put(r));
   emit('local');
   return r;
@@ -56,11 +57,35 @@ export async function remove(id) {
   if (r) await save({ ...r, deleted: true });
 }
 
-/** записать как есть, без отметки к отправке (для пришедшего с Mac) */
-export async function putMany(recs, { silent } = {}) {
-  if (!recs.length) return;
-  await tx('readwrite', s => recs.forEach(r => s.put(r)));
-  if (!silent) emit('remote');
+/** итог синхронизации — одной транзакцией, чтобы правка, сделанная в эту же секунду, не затёрлась:
+ *  отправленное снимаем с отправки, если его не меняли, пока шёл запрос;
+ *  пришедшее с Mac берём, если здесь нет неотправленной правки новее. Возвращает, сколько пришло нового. */
+export async function applySync(sent, incoming) {
+  const sentById = new Map(sent.map(r => [r.id, r]));
+  const inById = new Map(incoming.map(r => [r.id, r]));
+  const ids = new Set([...sentById.keys(), ...inById.keys()]);
+  let applied = 0;
+  await tx('readwrite', s => ids.forEach(id => {
+    const req = s.get(id);
+    req.onsuccess = () => {
+      let cur = req.result, changed = false;
+      const out = sentById.get(id), inc = inById.get(id);
+      if (cur && out && cur._dirty && cur.updated === out.updated) { cur = { ...cur }; delete cur._dirty; changed = true; }
+      if (inc && (!cur || !cur._dirty || inc.updated >= cur.updated)) {
+        if (!cur || cur.updated !== inc.updated) applied++;   // своё же, вернувшееся с Mac, — не новость
+        cur = inc; changed = true;
+      }
+      if (changed) s.put(cur);
+    };
+  }));
+  if (applied) emit('remote');
+  return applied;
 }
 
-export const notify = () => emit('remote');
+/** пометить все записи к отправке — когда база на Mac оказалась новой (пропала или восстановлена из копии) */
+export async function markAllDirty() {
+  await tx('readwrite', s => {
+    const req = s.getAll();
+    req.onsuccess = () => req.result.forEach(r => { if (!r._dirty) s.put({ ...r, _dirty: 1 }); });
+  });
+}
